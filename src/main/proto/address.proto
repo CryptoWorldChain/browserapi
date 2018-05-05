@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+import "tx.proto";
+package org.brewchain.browserAPI.gens;
+
+
+enum PADRModule {
+	ADR = 0; // 账户，合约，合约代码
+};
+
+enum PADRCommand {
+    GAD = 0; // 根据 address 获取 账户 详情		ReqGetAddrDetailByAddr
+};
+
+message ReqGetAddrDetailByAddr {
+	string address = 1;
+};
+
+message ResGetAddrDetailByAddr {
+	Address address = 1;
+	int32 retCode = 2;
+};
+
+message Address {
+    string address = 1;
+    int64 balance = 2;
+    string usdValue = 3;
+    repeated Transaction transactions = 4;
+    repeated Transaction tokenTransfers = 5;
+    string comments = 7;
+};

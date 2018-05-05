@@ -1,0 +1,82 @@
+syntax = "proto3";
+import "tx.proto";
+package org.brewchain.browserAPI.gens;
+
+enum PBLKTModule {
+     BLK = 0; // Block
+};
+
+enum PBLKCommand {
+	GTB = 0; // 获取最新的block getTheBest		ReqGetTheBestBlock
+	GBB = 1; // 获取一组block getBatchBlock	ReqGetBatchBlocks
+	GHA = 2; // 根据 block hash 获取 block 详情	ReqGetBlockByBlockHash
+	GHE = 3; // 根据 block height 获取 block 详情	ReqGetBlockByBlockHeight
+	GTH = 4; // 根据 tx hash 获取 block 详情	ReqGetBlockByTxHash
+}
+
+message ReqGetTheBestBlock {
+
+}
+
+message ResGetTheBestBlock {
+	int32 retCode = 1;
+	Block block = 2;
+}
+
+message ReqGetBatchBlocks {
+	int32 pageNo = 1;
+	int32 pageSize = 2;
+}
+
+message ResGetBatchBlocks {
+	int32 retCode = 1;
+	repeated Block blocks = 2;
+}
+
+message ReqGetBlockByBlockHash {
+	string blockHash = 1;
+}
+
+message ResGetBlockByBlockHash {
+	int32 retCode = 1;
+	Block block = 2;
+}
+
+message ReqGetBlockByBlockHeight {
+	int64 blockHeight = 1;
+}
+
+message ResGetBlockByBlockHeight {
+	int32 retCode = 1;
+	Block block = 2;
+}
+
+message ReqGetBlockByTxHash {
+	string txHash = 1;
+}
+
+message ResGetBlockByTxHash {
+	int32 retCode = 1;
+	Block block = 2;
+}
+
+message Block {
+	int64 height = 1;   
+  	int64 timeStamp = 2;
+  	int64 transactionsCount = 3;
+  	string BlockHash = 4;
+  	string parentHash = 5;
+  	string sha3Uncles = 6;
+  	string minedBy = 7;
+  	string difficulty = 8;
+  	string TotalDifficulty = 9;
+  	int64 size = 10;
+  	double gasUsedP = 11;//百分比	523,039 (6.53%)
+  	int64 gasUsed = 12;//具体值
+  	int64 gasLimit = 13;
+  	string nonce = 14;
+  	double blockReward = 15;//	3.01967748 Ether (3 + 0.01967748)
+  	string unclesReward = 16;//:	0
+  	string extraData = 17;//:	www.bw.com (Hex:0x7777772e62772e636f6d)
+}
+
