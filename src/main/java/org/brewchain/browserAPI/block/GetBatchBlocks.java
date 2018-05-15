@@ -1,14 +1,14 @@
 package org.brewchain.browserAPI.block;
 
 
-import java.util.Date;
+import java.util.List;
 
-import org.brewchain.account.core.BlockHelper;
-import org.brewchain.browserAPI.gens.BlockOuterClass.Block;
-import org.brewchain.browserAPI.gens.BlockOuterClass.PBLKCommand;
-import org.brewchain.browserAPI.gens.BlockOuterClass.PBLKTModule;
-import org.brewchain.browserAPI.gens.BlockOuterClass.ReqGetBatchBlocks;
-import org.brewchain.browserAPI.gens.BlockOuterClass.ResGetBatchBlocks;
+import org.brewchain.browserAPI.Helper.BlockHelper;
+import org.brewchain.browserAPI.gens.Block.BlockInfo;
+import org.brewchain.browserAPI.gens.Block.PBLKCommand;
+import org.brewchain.browserAPI.gens.Block.PBLKTModule;
+import org.brewchain.browserAPI.gens.Block.ReqGetBatchBlocks;
+import org.brewchain.browserAPI.gens.Block.ResGetBatchBlocks;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -18,15 +18,14 @@ import onight.tfw.async.CompleteHandler;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 import onight.tfw.otransio.api.PacketHelper;
 import onight.tfw.otransio.api.beans.FramePacket;
-import onight.tfw.outils.serialize.UUIDGenerator;
 
 @NActorProvider
 @Slf4j
 @Data
 public class GetBatchBlocks extends SessionModules<ReqGetBatchBlocks>{
 
-	@ActorRequire(name = "Block_Helper", scope = "global")
-	BlockHelper oBlockHelper;
+	@ActorRequire(name = "blockHelper", scope = "global")
+	BlockHelper blockHelper;
 	
 	@Override
 	public String[] getCmds() {
@@ -40,34 +39,29 @@ public class GetBatchBlocks extends SessionModules<ReqGetBatchBlocks>{
 
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqGetBatchBlocks pb, final CompleteHandler handler) {
-		ResGetBatchBlocks.Builder ret = getReturn();
-//
+		ResGetBatchBlocks.Builder ret = ResGetBatchBlocks.newBuilder();
+		//默认参数
+		int pageNo = 1;
+		int pageSize = 10;//TODO 暂定 10 行
+		if(pb != null){
+			if(pb.getPageNo() > 0){
+				pageNo = pb.getPageNo();
+			}
+			if(pb.getPageSize() > 0){
+				pageSize = pb.getPageSize();
+			}
+		}
+		
+		List<BlockInfo.Builder> list = blockHelper.getBatchBlocks(pageNo, pageSize);
+		
+		if(list != null && !list.isEmpty()){
+			for (BlockInfo.Builder block : list) {
+				ret.addBlocks(block);
+			}
+		}
+		
+		ret.setRetCode(1);
+		
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));
 	}
-	
-	public ResGetBatchBlocks.Builder getReturn() {
-		ResGetBatchBlocks.Builder ret = ResGetBatchBlocks.newBuilder();
-		Block.Builder block = Block.newBuilder();
-		block.setHeight(1L);
-		block.setTimeStamp(new Date().getTime());
-		block.setTransactionsCount(12);
-		block.setBlockHash(UUIDGenerator.generate());
-		block.setParentHash(UUIDGenerator.generate());
-		block.setSha3Uncles("");
-		block.setMinedBy(UUIDGenerator.generate());
-		block.setDifficulty(UUIDGenerator.generate());
-		block.setTotalDifficulty(UUIDGenerator.generate());
-		block.setSize(12L);
-		block.setGasUsedP(0.9d);
-		block.setGasLimit(100L);
-		block.setNonce("1");
-		block.setBlockReward(0.1d);
-		block.setUnclesReward("0101");
-		block.setExtraData("sss");
-		ret.addBlocks(block);
-		ret.setRetCode(1);
-		return ret;
-	}
-	
-	
 }

@@ -20,7 +20,7 @@ message ReqGetTheBestBlock {
 
 message ResGetTheBestBlock {
 	int32 retCode = 1;
-	Block block = 2;
+	BlockInfo block = 2;
 }
 
 message ReqGetBatchBlocks {
@@ -30,7 +30,7 @@ message ReqGetBatchBlocks {
 
 message ResGetBatchBlocks {
 	int32 retCode = 1;
-	repeated Block blocks = 2;
+	repeated BlockInfo blocks = 2;
 }
 
 message ReqGetBlockByBlockHash {
@@ -39,16 +39,16 @@ message ReqGetBlockByBlockHash {
 
 message ResGetBlockByBlockHash {
 	int32 retCode = 1;
-	Block block = 2;
+	BlockInfo block = 2;
 }
 
 message ReqGetBlockByBlockHeight {
-	int64 blockHeight = 1;
+	int32 blockHeight = 1;
 }
 
 message ResGetBlockByBlockHeight {
 	int32 retCode = 1;
-	Block block = 2;
+	BlockInfo block = 2;
 }
 
 message ReqGetBlockByTxHash {
@@ -57,26 +57,30 @@ message ReqGetBlockByTxHash {
 
 message ResGetBlockByTxHash {
 	int32 retCode = 1;
-	Block block = 2;
+	BlockInfo block = 2;
 }
 
-message Block {
-	int64 height = 1;   
-  	int64 timeStamp = 2;
-  	int64 transactionsCount = 3;
-  	string BlockHash = 4;
-  	string parentHash = 5;
-  	string sha3Uncles = 6;
-  	string minedBy = 7;
-  	string difficulty = 8;
-  	string TotalDifficulty = 9;
-  	int64 size = 10;
-  	double gasUsedP = 11;//百分比	523,039 (6.53%)
-  	int64 gasUsed = 12;//具体值
-  	int64 gasLimit = 13;
-  	string nonce = 14;
-  	double blockReward = 15;//	3.01967748 Ether (3 + 0.01967748)
-  	string unclesReward = 16;//:	0
-  	string extraData = 17;//:	www.bw.com (Hex:0x7777772e62772e636f6d)
+message BlockInfo {
+	BlockHeader header = 1;
+	BlockBody body = 2;
+}
+
+message BlockHeader {
+	string parentHash = 1;
+	string coinbase = 2;
+	string txTrieRoot = 3;
+	int64 timestamp = 4;
+	int32 height = 5;//number
+	string reward = 6;//为什么是 byte类型
+	string extraData = 7 [jstype = JS_NORMAL];
+	string nonce = 8;
+	string blockHash = 9;
+	repeated string txHashs = 10;
+	int32 txCount = 11;
+	int64 sliceId = 12;
+}
+
+message BlockBody {
+	repeated Transaction transactions = 1;
 }
 

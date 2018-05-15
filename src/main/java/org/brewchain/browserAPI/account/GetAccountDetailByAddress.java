@@ -1,13 +1,13 @@
 package org.brewchain.browserAPI.account;
 
 
-import org.brewchain.account.core.AccountHelper;
-import org.brewchain.account.core.BlockHelper;
-import org.brewchain.browserAPI.gens.AddressOuterClass.Address;
-import org.brewchain.browserAPI.gens.AddressOuterClass.PADRCommand;
-import org.brewchain.browserAPI.gens.AddressOuterClass.PADRModule;
-import org.brewchain.browserAPI.gens.AddressOuterClass.ReqGetAddrDetailByAddr;
-import org.brewchain.browserAPI.gens.AddressOuterClass.ResGetAddrDetailByAddr;
+import org.apache.commons.lang3.StringUtils;
+import org.brewchain.browserAPI.Helper.AddressHelper;
+import org.brewchain.browserAPI.gens.Address.AddressInfo;
+import org.brewchain.browserAPI.gens.Address.PADRCommand;
+import org.brewchain.browserAPI.gens.Address.PADRModule;
+import org.brewchain.browserAPI.gens.Address.ReqGetAddrDetailByAddr;
+import org.brewchain.browserAPI.gens.Address.ResGetAddrDetailByAddr;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
@@ -18,18 +18,14 @@ import onight.tfw.async.CompleteHandler;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 import onight.tfw.otransio.api.PacketHelper;
 import onight.tfw.otransio.api.beans.FramePacket;
-import onight.tfw.outils.serialize.UUIDGenerator;
 
 @NActorProvider
 @Slf4j
 @Data
 public class GetAccountDetailByAddress extends SessionModules<ReqGetAddrDetailByAddr>{
 
-	@ActorRequire(name = "Account_Helper", scope = "global")
-	AccountHelper oAccountHelper;
-	
-	@ActorRequire(name = "Block_Helper", scope = "global")
-	BlockHelper oBlockHelper;
+	@ActorRequire(name = "addressHelper", scope = "global")
+	AddressHelper addressHelper;
 	
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
@@ -46,50 +42,14 @@ public class GetAccountDetailByAddress extends SessionModules<ReqGetAddrDetailBy
 
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqGetAddrDetailByAddr pb, final CompleteHandler handler) {
-		ResGetAddrDetailByAddr.Builder ret = getReturn();
+		ResGetAddrDetailByAddr.Builder ret = ResGetAddrDetailByAddr.newBuilder();
+		if(pb != null && StringUtils.isNotBlank(pb.getAddress())){
+			AddressInfo.Builder addrInfo = addressHelper.getAccountDetailByAddress(encApi.hexDec(pb.getAddress()));
+			if(addrInfo != null)
+				ret.setAddress(addrInfo);
+			ret.setRetCode(1);
+		}
 		
-//		ResGetAddrDetailByAddr.Builder oRespGetAccount = ResGetAddrDetailByAddr.newBuilder();
-//		oRespGetAccount.setRetCode(1);
-//
-//		Address.Builder addressEntity = Address.newBuilder();
-		//TODO 未明确字段
-//		addressEntity.setUsdValue("");
-//		addressEntity.setComments("");
-//		
-//		try {
-//			// 获取 address、 balance
-//			Account oAccount = oAccountHelper.GetAccount(encApi.hexDec(pb.getAddress()));
-//			if(oAccount != null){
-//				if(oAccount.getAddress() != null) {
-//					addressEntity.setAddress(oAccount.getAddress().toString());
-//				}
-//				if(oAccount.getValue() != null){
-//					addressEntity.setBalance(oAccount.getValue().getBalance());
-//				}
-//			}
-			
-			//TODO 构造 transaction
-//			BlockHelper.getTransactionByAddress();
-			
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			oRespGetAccount.setRetCode(-1);
-//		}
-//
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));
 	}
-	
-	public ResGetAddrDetailByAddr.Builder getReturn() {
-		ResGetAddrDetailByAddr.Builder ret = ResGetAddrDetailByAddr.newBuilder();
-		Address.Builder addressEntity = Address.newBuilder();
-		addressEntity.setAddress(UUIDGenerator.generate());
-		addressEntity.setBalance(0L);
-		addressEntity.setUsdValue("0.00");
-		addressEntity.setComments("xxx");
-		ret.setAddress(addressEntity);
-		ret.setRetCode(1);
-		return ret;
-	}
-	
-	
 }

@@ -17,15 +17,39 @@ message ReqGetAddrDetailByAddr {
 };
 
 message ResGetAddrDetailByAddr {
-	Address address = 1;
+	AddressInfo address = 1;
 	int32 retCode = 2;
 };
 
-message Address {
-    string address = 1;
+message AddressInfo {
+    int32 nonce = 1;
     int64 balance = 2;
-    string usdValue = 3;
-    repeated Transaction transactions = 4;
-    repeated Transaction tokenTransfers = 5;
-    string comments = 7;
+    repeated string address = 3;
+    repeated Token tokens = 4;
+    repeated CryptoToken cryptoTokens = 5;
+    repeated Transaction transactions = 6;
+    repeated Transaction tokenTransactions = 7;
+    repeated Transaction cryptoTokenTransactions = 8;
+    string comments = 10;
 };
+
+message Token {
+    string token = 1;
+    int64 balance = 2;
+}
+
+message CryptoToken {
+    string symbol = 1; // 用于分类ERC721 Token的标记
+    repeated CryptoTokenValue tokens = 2;
+}
+
+message CryptoTokenValue {
+    string hash = 1; // Token的hash，hash(index,total,code,name,timestamp)
+    int64 timestamp = 2; // Token创建时间
+    int32 index = 3; // 该Token发行时的索引
+    int32 total = 4; // 该Token的发行总数量
+    string code = 5; // Token的编号
+    string name = 6; // Token的名称
+    string owner = 7; // 所有人的账户地址
+    int32 nonce = 8; // 交易次数
+}

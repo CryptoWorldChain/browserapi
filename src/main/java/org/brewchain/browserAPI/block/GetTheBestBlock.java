@@ -1,14 +1,11 @@
 package org.brewchain.browserAPI.block;
 
-
-import java.util.Date;
-
-import org.brewchain.account.core.BlockHelper;
-import org.brewchain.browserAPI.gens.BlockOuterClass.Block;
-import org.brewchain.browserAPI.gens.BlockOuterClass.PBLKCommand;
-import org.brewchain.browserAPI.gens.BlockOuterClass.PBLKTModule;
-import org.brewchain.browserAPI.gens.BlockOuterClass.ReqGetTheBestBlock;
-import org.brewchain.browserAPI.gens.BlockOuterClass.ResGetTheBestBlock;
+import org.brewchain.browserAPI.Helper.BlockHelper;
+import org.brewchain.browserAPI.gens.Block.BlockInfo;
+import org.brewchain.browserAPI.gens.Block.PBLKCommand;
+import org.brewchain.browserAPI.gens.Block.PBLKTModule;
+import org.brewchain.browserAPI.gens.Block.ReqGetTheBestBlock;
+import org.brewchain.browserAPI.gens.Block.ResGetTheBestBlock;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -18,16 +15,15 @@ import onight.tfw.async.CompleteHandler;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
 import onight.tfw.otransio.api.PacketHelper;
 import onight.tfw.otransio.api.beans.FramePacket;
-import onight.tfw.outils.serialize.UUIDGenerator;
 
 @NActorProvider
 @Slf4j
 @Data
-public class GetTheBestBlock extends SessionModules<ReqGetTheBestBlock>{
+public class GetTheBestBlock extends SessionModules<ReqGetTheBestBlock> {
 
-	@ActorRequire(name = "Block_Helper", scope = "global")
-	BlockHelper oBlockHelper;
-	
+	@ActorRequire(name = "blockHelper", scope = "global")
+	BlockHelper blockHelper;
+
 	@Override
 	public String[] getCmds() {
 		return new String[] { PBLKCommand.GTB.name() };
@@ -40,34 +36,14 @@ public class GetTheBestBlock extends SessionModules<ReqGetTheBestBlock>{
 
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqGetTheBestBlock pb, final CompleteHandler handler) {
-		ResGetTheBestBlock.Builder ret = getReturn();
-//
+		ResGetTheBestBlock.Builder ret = ResGetTheBestBlock.newBuilder();
+		BlockInfo.Builder block = blockHelper.getTheBestBlock();
+		if (block != null) {
+			ret.setBlock(block);
+		}
+		ret.setRetCode(1);
+
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));
 	}
-	
-	public ResGetTheBestBlock.Builder getReturn() {
-		ResGetTheBestBlock.Builder ret = ResGetTheBestBlock.newBuilder();
-		Block.Builder block = Block.newBuilder();
-		block.setHeight(1L);
-		block.setTimeStamp(new Date().getTime());
-		block.setTransactionsCount(12);
-		block.setBlockHash(UUIDGenerator.generate());
-		block.setParentHash(UUIDGenerator.generate());
-		block.setSha3Uncles("");
-		block.setMinedBy(UUIDGenerator.generate());
-		block.setDifficulty(UUIDGenerator.generate());
-		block.setTotalDifficulty(UUIDGenerator.generate());
-		block.setSize(12L);
-		block.setGasUsedP(0.9d);
-		block.setGasLimit(100L);
-		block.setNonce("1");
-		block.setBlockReward(0.1d);
-		block.setUnclesReward("0101");
-		block.setExtraData("sss");
-		ret.setBlock(block);
-		ret.setRetCode(1);
-		return ret;
-	}
-	
-	
+
 }
