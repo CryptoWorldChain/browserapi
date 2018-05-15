@@ -1,7 +1,10 @@
 package org.brewchain.browserAPI.additional;
 
 
+import java.util.List;
+
 import org.brewchain.browserAPI.Helper.AdditionalHelper;
+import org.brewchain.browserAPI.gens.Additional.Node;
 import org.brewchain.browserAPI.gens.Additional.PADICommand;
 import org.brewchain.browserAPI.gens.Additional.PADIModule;
 import org.brewchain.browserAPI.gens.Additional.ReqGetNodes;
@@ -37,7 +40,14 @@ public class GetNodes extends SessionModules<ReqGetNodes>{
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqGetNodes pb, final CompleteHandler handler) {
 		ResGetNodes.Builder ret = ResGetNodes.newBuilder();
-		ret = additionalHelper.getNodesSorted();
+		List<Node> nodeList = additionalHelper.getNodes();
+		
+		if(nodeList != null && !nodeList.isEmpty()){
+			for(Node node : nodeList){
+				ret.addNodes(node);
+			}
+		}
+		
 		ret.setRetCode(1);
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));
 	}
