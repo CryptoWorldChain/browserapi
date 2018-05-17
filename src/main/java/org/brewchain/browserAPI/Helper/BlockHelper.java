@@ -2,6 +2,7 @@ package org.brewchain.browserAPI.Helper;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -11,6 +12,7 @@ import org.brewchain.account.gens.Tx.MultiTransaction;
 import org.brewchain.account.gens.Tx.MultiTransactionBody;
 import org.brewchain.account.gens.Tx.MultiTransactionInput;
 import org.brewchain.account.gens.Tx.MultiTransactionOutput;
+import org.brewchain.browserAPI.gens.Address.AddressInfo;
 import org.brewchain.browserAPI.gens.Block.BlockBody;
 import org.brewchain.browserAPI.gens.Block.BlockHeader;
 import org.brewchain.browserAPI.gens.Block.BlockInfo;
@@ -27,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
+import onight.tfw.outils.serialize.UUIDGenerator;
 
 /**
  * @author jack
@@ -309,7 +312,6 @@ public class BlockHelper implements ActorService {
 			header.setTimestamp(oBlockHeader.getTimestamp());
 			header.setHeight(oBlockHeader.getNumber());
 			header.setReward(DataUtil.byteString2String(oBlockHeader.getReward(), encApi));
-//			header.setExtraData(encApi.hexEnc(oBlockHeader.getExtraData().toByteArray())); 不需要返回
 			header.setNonce(DataUtil.byteString2String(oBlockHeader.getNonce(), encApi));
 			header.setSliceId(oBlockHeader.getSliceId());
 			if(oBlockHeader.getTxHashsList() != null && !oBlockHeader.getTxHashsList().isEmpty()){
@@ -318,6 +320,14 @@ public class BlockHelper implements ActorService {
 					header.addTxHashs(DataUtil.byteString2String(bs, encApi));
 				}
 			}
+			
+			//TODO 
+			AddressInfo.Builder addressInfo = AddressInfo.newBuilder();
+			addressInfo.addAddress(UUIDGenerator.generate());
+			addressInfo.setBalance(new Random().nextInt(1000));
+			header.setMiner(addressInfo);
+			
+			header.addNodes("127.0.0.1");
 		}
 		
 		return header;
@@ -335,17 +345,6 @@ public class BlockHelper implements ActorService {
 						body.addTransactions(tx);
 				}
 			}
-			
-		}else{
-			//确定 header 中 txhashList 和 blockBody是否真的同时存在，不同时存在则需要进行相关处理
-//			if(oBlockHeader.getTxHashsList() != null && !oBlockHeader.getTxHashsList().isEmpty()){
-//				BlockBody.Builder body = BlockBody.newBuilder();
-//				for(ByteString bs : oBlockHeader.getTxHashsList()){
-//					Transaction.Builder tx = getTxByTxHash(bs.toByteArray());
-//					body.addTransactions(tx);
-//				}
-//				block.setBody(body);
-//			}
 		}
 		
 		return body;
@@ -406,7 +405,6 @@ public class BlockHelper implements ActorService {
 				blockHeight = oBlock.getHeader().getNumber();
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		};
 		return blockHeight;
@@ -527,22 +525,5 @@ public class BlockHelper implements ActorService {
 			tx.setData(DataUtil.byteString2String(data, encApi));
 		
 		return tx;
-	}
-	
-	
-	/**
-	 * 构造 blockInfo
-	 * @param header
-	 * @param body
-	 * @return
-	 */
-	public BlockInfo.Builder getBlockEntityByParams(BlockHeader header, BlockBody body){
-		BlockInfo.Builder block = BlockInfo.newBuilder();
-		if(body != null)
-			block.setBody(body);
-		if(header != null)
-			block.setHeader(header);
-		
-		return block;
-	}
+	}	
 }
