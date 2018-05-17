@@ -35,6 +35,7 @@ message Transaction {
 	int64 timeStamp = 4;
 	repeated TxInput froms = 5;
 	repeated TxOutput tos = 6;
+	string status = 7;
 	repeated string delegates = 13 [jstype = JS_NORMAL];
 	string data = 14 [jstype = JS_NORMAL];
 }

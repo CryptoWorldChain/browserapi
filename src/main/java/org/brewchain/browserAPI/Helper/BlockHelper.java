@@ -23,6 +23,7 @@ import org.brewchain.browserAPI.util.DataUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ProtocolStringList;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -292,9 +293,18 @@ public class BlockHelper implements ActorService {
 			block.setHeader(blockHeader);
 		
 		//body
-		BlockBody.Builder blockBody = oBlockBody2BlockBody(oBlockBody); 
-		if(blockBody != null)
-			block.setBody(blockBody);
+//		BlockBody.Builder blockBody = oBlockBody2BlockBody(oBlockBody); 
+//		if(blockBody != null)
+//			block.setBody(blockBody);
+		
+		BlockBody.Builder blockBody = BlockBody.newBuilder();
+		List<ByteString>  list = oBlockHeader.getTxHashsList();
+		for (ByteString string : list) {
+			Transaction.Builder tx = getTxByTxHash(string.toByteArray());
+			blockBody.addTransactions(tx);
+		}
+		
+		block.setBody(blockBody);
 		
 		return block;
 	}
@@ -428,6 +438,10 @@ public class BlockHelper implements ActorService {
 		//交易时间
 		long timeStamp = mtBody.getTimestamp();
 		
+		//交易状态
+		System.out.println("the txHash is " + encApi.hexEnc(mtx.getTxHash().toByteArray()) + " and the status is " + mtx.getStatus());
+		String txStatus = mtx.getStatus();
+		
 		// data
 		ByteString data = mtBody.getData();
 		
@@ -475,7 +489,7 @@ public class BlockHelper implements ActorService {
 		}
 		
 		//构建对象
-		Transaction.Builder tx = getTransactionEntityByParams(mtx.getTxHash(), blockHeight, timeStamp, froms, tos, delegateStrs, data);
+		Transaction.Builder tx = getTransactionEntityByParams(mtx.getTxHash(), txStatus, blockHeight, timeStamp, froms, tos, delegateStrs, data);
 	
 		return tx;
 	}
@@ -492,13 +506,19 @@ public class BlockHelper implements ActorService {
 	 * @param data
 	 * @return
 	 */
-	public Transaction.Builder getTransactionEntityByParams(ByteString txHash, int blockHeight, long timeStamp, List<TxInput.Builder> froms, List<TxOutput.Builder> tos, List<String> delegates, ByteString data){
+	public Transaction.Builder getTransactionEntityByParams(ByteString txHash, String txStatus, int blockHeight, long timeStamp, List<TxInput.Builder> froms, List<TxOutput.Builder> tos, List<String> delegates, ByteString data){
 		Transaction.Builder tx = Transaction.newBuilder();
 	
 		tx.setTxHash(DataUtil.byteString2String(txHash, encApi));
 		tx.setBlockHeight(blockHeight);
 		
 		tx.setTimeStamp(timeStamp);
+		
+		if(StringUtils.isNotBlank(txStatus)){
+			tx.setStatus(txStatus);
+		}else{
+			tx.setStatus("null");
+		}
 		
 		if(froms != null && !froms.isEmpty()){
 			for(TxInput.Builder txInput : froms){
