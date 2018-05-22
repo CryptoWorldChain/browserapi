@@ -23,7 +23,6 @@ import org.brewchain.browserAPI.util.DataUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.ProtocolStringList;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -284,21 +283,26 @@ public class BlockHelper implements ActorService {
 	 */
 	public BlockInfo.Builder oBlock2BlockInfo(BlockEntity blockEntity){
 		BlockInfo.Builder block = BlockInfo.newBuilder();
-		org.brewchain.account.gens.Block.BlockHeader oBlockHeader = blockEntity.getHeader();
-		org.brewchain.account.gens.Block.BlockBody oBlockBody = blockEntity.getBody();
 	
 		//header
-		BlockHeader.Builder blockHeader = oBlockHeader2BlockHeader(oBlockHeader); 
-		if(blockHeader != null)
-			block.setHeader(blockHeader);
+		BlockHeader.Builder blockHeader = oBlockHeader2BlockHeader(blockEntity.getHeader()); 
+		if(blockHeader != null){
+			//miner
+			blockHeader.setMiner(oBlockMiner2Miner(blockEntity.getMiner()));
+			//nodes
+			List<MultiTransaction> txs = blockEntity.getBody().getTxsList();
+			for(MultiTransaction tx : txs){
+				blockHeader.addNodes(tx.getTxNode().getBcuid());//节点唯一性标识
+			}
 		
-		//body
-//		BlockBody.Builder blockBody = oBlockBody2BlockBody(oBlockBody); 
-//		if(blockBody != null)
-//			block.setBody(blockBody);
+			block.setHeader(blockHeader);
+		}
+		
+		
+		
 		
 		BlockBody.Builder blockBody = BlockBody.newBuilder();
-		List<ByteString>  list = oBlockHeader.getTxHashsList();
+		List<ByteString>  list = blockEntity.getHeader().getTxHashsList();
 		for (ByteString string : list) {
 			Transaction.Builder tx = getTxByTxHash(string.toByteArray());
 			blockBody.addTransactions(tx);
@@ -309,6 +313,24 @@ public class BlockHelper implements ActorService {
 		return block;
 	}
 	
+	/**
+	 * @param oBlockMiner
+	 * @return
+	 */
+	public AddressInfo.Builder oBlockMiner2Miner(org.brewchain.account.gens.Block.BlockMiner oBlockMiner){
+		AddressInfo.Builder addressInfo = AddressInfo.newBuilder();
+		addressInfo.addAddress(oBlockMiner.getAddress());
+		addressInfo.setBalance(oBlockMiner.getReward());
+		
+//		header.addNodes("127.0.0.1");
+		
+		return addressInfo;
+	}
+	
+	/**
+	 * @param oBlockHeader
+	 * @return
+	 */
 	public BlockHeader.Builder oBlockHeader2BlockHeader(org.brewchain.account.gens.Block.BlockHeader oBlockHeader){
 		BlockHeader.Builder header = null;
 	
@@ -317,7 +339,7 @@ public class BlockHelper implements ActorService {
 			header = BlockHeader.newBuilder();
 			header.setBlockHash(DataUtil.byteString2String(oBlockHeader.getBlockHash(), encApi));
 			header.setParentHash(DataUtil.byteString2String(oBlockHeader.getParentHash(), encApi));
-			header.setCoinbase(DataUtil.byteString2String(oBlockHeader.getCoinbase(), encApi));
+//			header.setCoinbase(DataUtil.byteString2String(oBlockHeader.getCoinbase(), encApi));
 			header.setTxTrieRoot(DataUtil.byteString2String(oBlockHeader.getTxTrieRoot(), encApi));
 			header.setTimestamp(oBlockHeader.getTimestamp());
 			header.setHeight(oBlockHeader.getNumber());
@@ -330,19 +352,15 @@ public class BlockHelper implements ActorService {
 					header.addTxHashs(DataUtil.byteString2String(bs, encApi));
 				}
 			}
-			
-			//TODO 
-			AddressInfo.Builder addressInfo = AddressInfo.newBuilder();
-			addressInfo.addAddress(UUIDGenerator.generate());
-			addressInfo.setBalance(new Random().nextInt(1000));
-			header.setMiner(addressInfo);
-			
-			header.addNodes("127.0.0.1");
 		}
 		
 		return header;
 	}
 	
+	/**
+	 * @param oBlockBody
+	 * @return
+	 */
 	public BlockBody.Builder oBlockBody2BlockBody(org.brewchain.account.gens.Block.BlockBody oBlockBody){
 		BlockBody.Builder body = null;
 		if(oBlockBody != null && !oBlockBody.getTxsList().isEmpty()){
@@ -439,7 +457,6 @@ public class BlockHelper implements ActorService {
 		long timeStamp = mtBody.getTimestamp();
 		
 		//交易状态
-		System.out.println("the txHash is " + encApi.hexEnc(mtx.getTxHash().toByteArray()) + " and the status is " + mtx.getStatus());
 		String txStatus = mtx.getStatus();
 		
 		// data

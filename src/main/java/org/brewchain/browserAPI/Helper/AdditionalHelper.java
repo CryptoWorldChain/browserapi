@@ -11,12 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.brewchain.browserAPI.gens.Additional.Count;
 import org.brewchain.browserAPI.gens.Additional.Node;
 import org.brewchain.browserAPI.gens.Additional.ResGetAdditional;
 import org.brewchain.browserAPI.gens.Additional.ResGetTxCount;
+import org.brewchain.browserAPI.gens.Block.BlockInfo;
+import org.brewchain.browserAPI.gens.Tx.Transaction;
 import org.brewchain.browserAPI.util.CallHelper;
 import org.brewchain.browserAPI.util.DataUtil;
 import org.fc.brewchain.bcapi.EncAPI;
@@ -76,32 +79,107 @@ public class AdditionalHelper implements ActorService {
 	private final static long DAY = HOUR * 24;
 
 	private final static long WEEK = DAY * 7;
+	
+	private final static String PENDING = "PENDING";//	待连节点状态
+	private final static String DIRECT = "DIRECT";// 直连节点状态
+	
+	private final static String NID_RAFT = "raft";
+	private final static String NID_DPOS = "dpos";
 
+	/**
+	 * @return
+	 */
 	public ResGetAdditional.Builder getAdditional() {
 		ResGetAdditional.Builder ret = ResGetAdditional.newBuilder();
 		getAvgBlockAndTps(ret);
 
 		List<Node> dposList = getDposNode();
 		List<Node> raftList = getRaftNodes();
-		List<Node> allNode = new LinkedList<Node>();
-
-		// add dpos to node
-		if (dposList != null && !dposList.isEmpty()) {
-			allNode.addAll(dposList);
-		}
-
-		// raft and add raft to node
-		if (raftList != null && !raftList.isEmpty()) {
-			allNode.addAll(raftList);
-			ret.setDpos(raftList.size() + "");
-		} else {
-			ret.setDpos("0");
-		}
-
-		// nodes
-		ret.setNodes(allNode.size() + "");
-
+		
+		//确定不同状态的节点总数
+		int pendingCount = 0;
+		int directCount = 0;
+		int allCount = 0;
+		pendingCount = getPendingCount(dposList);
+		pendingCount = getPendingCount(raftList);
+		directCount = getDirectCount(dposList);
+		directCount = getDirectCount(raftList);
+		
+		//两种状态确定节点总数
+		allCount = pendingCount + directCount;
+		
+		ret.setNodes(allCount + "");
+		ret.setPNodes(pendingCount + "");
+		ret.setDNodes(directCount + "");
+		
+		ret.setConfirm(DataUtil.formateStr(getConfirm() + ""));
+		
 		return ret;
+	}
+	
+	/**
+	 * @return
+	 */
+	public double getConfirm(){
+		double confirm = 0d;
+		List<BlockInfo.Builder> blockList = blockHelper.getBatchBlocks(1, 5);
+		if(blockList != null){
+			int txCount = 0;
+			long confirmTimeSum = 0l;
+			for(BlockInfo.Builder block : blockList){
+				if(block.getBody() != null && !block.getBody().getTransactionsList().isEmpty()){
+					if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
+						long blockTime = block.getHeader().getTimestamp();
+						List<Transaction> txList = block.getBody().getTransactionsList();
+						for(Transaction tx : txList){
+							if(tx.getTimeStamp() > 0){
+								 confirmTimeSum += blockTime - tx.getTimeStamp();
+							}
+						}
+						txCount += txList.size();
+					}
+				}
+			}
+			
+			confirmTimeSum /= THOUSAND;//毫秒变秒
+			
+			confirm = (double)confirmTimeSum / txCount;
+		}
+		return confirm;
+	}
+	
+	/**
+	 * 获取节点列表中 pending 状态的节点个数
+	 * @param nodeList
+	 * @return
+	 */
+	public synchronized int getPendingCount(List<Node> nodeList){
+		return getNodeCountByStatus(nodeList, PENDING);
+	}
+	
+	/**
+	 * @param nodeList
+	 * @return
+	 */
+	public int getDirectCount(List<Node> nodeList){
+		return getNodeCountByStatus(nodeList, DIRECT);
+	}
+	
+	/**
+	 * @param nodeList
+	 * @param status
+	 * @return
+	 */
+	public int getNodeCountByStatus(List<Node> nodeList, String status){
+		int count = 0;
+		if(nodeList != null && !nodeList.isEmpty()){
+			for(Node node : nodeList){
+				if(StringUtils.isNotBlank(node.getStatus()) && node.getStatus().equals(status)){
+					count += 1;
+				}
+			}
+		}
+		return count;
 	}
 
 	/**
@@ -122,13 +200,19 @@ public class AdditionalHelper implements ActorService {
 		return allNode;
 	}
 
+	/**
+	 * @return
+	 */
 	public List<Node> getRaftNodes() {
-		List<Node> raftList = getNodesBase("raft");
+		List<Node> raftList = getNodesBase(NID_RAFT);
 		return raftList;
 	}
 
+	/**
+	 * @return
+	 */
 	public List<Node> getDposNode() {
-		List<Node> dposList = getNodesBase("dpos");
+		List<Node> dposList = getNodesBase(NID_DPOS);
 		return dposList;
 	}
 
@@ -148,22 +232,24 @@ public class AdditionalHelper implements ActorService {
 				JsonNode jsonObject = mapper.readTree(nodeRet.getBody());
 
 				if (jsonObject != null) {
+					
+					//相应的要添加节点的类型（raft、dpos）和节点的状态（pending、direct）
 					if (jsonObject.has("dnodes")) {
 						ArrayNode a = (ArrayNode) jsonObject.get("dnodes");
 						for (JsonNode jn : a) {
-							list.add(getNodeInfo(jn));
+							list.add(getNodeInfo(jn, nodeType, DIRECT));
 						}
 					}
 
 					if (jsonObject.has("pnodes")) {
 						ArrayNode a = (ArrayNode) jsonObject.get("pnodes");
 						for (JsonNode jn : a) {
-							list.add(getNodeInfo(jn));
+							list.add(getNodeInfo(jn, nodeType, PENDING));
 						}
 					}
 				}
 			} else {
-				log.error("request node list error");
+				log.error("request node list is empty");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -176,7 +262,7 @@ public class AdditionalHelper implements ActorService {
 	 * @param jn
 	 * @return
 	 */
-	public Node getNodeInfo(JsonNode jn) {
+	public Node getNodeInfo(JsonNode jn, String type, String status) {
 		Node.Builder node = Node.newBuilder();
 		String node_name = "";
 		String uri = "";
@@ -220,6 +306,9 @@ public class AdditionalHelper implements ActorService {
 			block_cc = jn.get("block_cc").asLong();
 			node.setBlockCc(block_cc);
 		}
+		
+		node.setStatus(status);
+		node.setType(type);
 
 		return node.build();
 
@@ -519,7 +608,6 @@ public class AdditionalHelper implements ActorService {
 			long firstTime = timeList.get(0);//需要time按照倒序排序，5:20、5:10、5:00
 			long startTime = getStartTime(firstTime, lt, delay);
 			for(int i = GROUP_COUNT; i > 0; i--){
-				System.out.println("request " + delay + ", the startTime is " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSSS").format(new Date(startTime))); 
 				if(countMap.get(startTime) != null){
 					a[i] = countMap.get(startTime);
 				}

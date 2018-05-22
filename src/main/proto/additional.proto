@@ -17,11 +17,14 @@ message ReqGetAdditional {
 
 message ResGetAdditional {
 	int32 retCode = 1;
-	string avgBlockTime = 2;
-	string tps = 3;
-	string nodes = 4;
-	string dpos = 5;
-	int32 txCount = 6;
+	string avgBlockTime = 2;//平均出块时间
+	string tps = 3;//每秒产生交易数量
+	int32 txCount = 4;//所有区块中的交易总数
+	string nodes = 5;//所有节点数量
+	string dNodes = 6;//已连接的节点数
+	string pNodes = 7;//待连接的节点数
+	string confirm = 8;//最新5块中所有交易的平均确认时间
+	
 }
 
 message ReqGetNodes {
@@ -30,6 +33,7 @@ message ReqGetNodes {
 
 message ResGetNodes {
 	repeated Node nodes = 1;
+	
 	int32 retCode = 2;
 }
 
@@ -47,7 +51,8 @@ message Node {
 	 int64 recv_cc = 11;//总收到多少数据
 	 int64 send_cc = 12;//总发送多少数据
 	 int64 block_cc = 13;//总产生了多少个区块！
-		
+	 string status = 14;//节点状态
+	 string type = 15;//节点类型
 }
 
 message ReqGetTxCount {
