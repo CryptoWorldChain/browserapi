@@ -57,6 +57,7 @@ public class GetTxByAddress extends SessionModules<ReqGetTxByAddress>{
 				}
 			}
 		} catch (Exception e){
+			log.error("get tx error " + e.getMessage());
 			ret.setRetCode(-1);
 		}
 		

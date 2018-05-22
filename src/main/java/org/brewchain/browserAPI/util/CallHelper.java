@@ -37,7 +37,7 @@ public class CallHelper {
 				ret = null;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("request " + reqString + " error " + e.getMessage());
 			ret = null;
 		} finally {
 			try {
@@ -48,7 +48,7 @@ public class CallHelper {
 					conn.disconnect();
 				}
 			} catch (IOException ex) {
-				ex.printStackTrace();
+				log.error("request " + reqString + " error " + ex.getMessage());
 			}
 		}
 		return ret;
@@ -88,7 +88,7 @@ public class CallHelper {
 				ret = null;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("request " + url + " error " + e.getMessage());
 			ret = null;
 		} finally {
 			try {
@@ -102,7 +102,7 @@ public class CallHelper {
 					conn.disconnect();
 				}
 			} catch (IOException ex) {
-				ex.printStackTrace();
+				log.error("request " + url + " error " + ex.getMessage());
 			}
 		}
 	

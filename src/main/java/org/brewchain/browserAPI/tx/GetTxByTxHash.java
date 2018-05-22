@@ -49,7 +49,7 @@ public class GetTxByTxHash extends SessionModules<ReqGetTxByTxHash>{
 				ret.setTransaction(blockHelper.getTxByTxHash(encApi.hexDec(pb.getTxHash())));
 			}
 		} catch (Exception e){
-			e.printStackTrace();
+			log.error("get tx error " + e.getMessage());
 			ret.setRetCode(-1);
 		}
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));

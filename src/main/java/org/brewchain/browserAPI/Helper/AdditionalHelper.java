@@ -252,7 +252,7 @@ public class AdditionalHelper implements ActorService {
 				log.error("request node list is empty");
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error(String.format("get node info error : %s", e.getMessage()));
 		}
 
 		return list;
@@ -384,7 +384,7 @@ public class AdditionalHelper implements ActorService {
 			BrowserAPILocalCache.additional.put("tps", ret.getTps());
 
 		} catch (ExecutionException e) {
-			e.printStackTrace();
+			log.error("get homepage's info error " + e.getMessage());
 		}
 	}
 
@@ -565,7 +565,7 @@ public class AdditionalHelper implements ActorService {
 			if(ret != null)
 				jn = mapper.readTree(ret);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("parse string 2 json error while geting recent transactions ");
 		}
 
 		List<Long> timeList = new LinkedList<Long>();

@@ -70,7 +70,7 @@ public class BlockHelper implements ActorService {
 				block = oBlock2BlockInfo(oBlock.build());
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get the best block error" + e.getMessage());
 		}
 		return block;
 	}
@@ -84,7 +84,7 @@ public class BlockHelper implements ActorService {
 		try {
 			oBlock = oBlockHelper.GetBestBlock();
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get the best block error" + e.getMessage());
 		}
 		return oBlock;
 	}
@@ -111,7 +111,7 @@ public class BlockHelper implements ActorService {
 		try {
 			oBlock = oBlockChainHelper.getGenesisBlock().toBuilder();
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get genesis block error" + e.getMessage());
 		}
 		
 		return oBlock;
@@ -128,7 +128,7 @@ public class BlockHelper implements ActorService {
 		try {
 			blockLists = oBlockChainHelper.getParentsBlocks(best.getHeader().getBlockHash().toByteArray(), oldest.getHeader().getBlockHash().toByteArray(), best.getHeader().getNumber());
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get all blocks error" + e.getMessage());
 		}
 		
 		return blockLists;
@@ -182,7 +182,7 @@ public class BlockHelper implements ActorService {
 			}
 			
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get batch blocks error" + e.getMessage());
 		}
 		return retList;
 	}
@@ -199,7 +199,7 @@ public class BlockHelper implements ActorService {
 		try {
 			list = oBlockChainHelper.getParentsBlocks(startBlockHash, endBlockHash, size);
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get parent block error");
 		}
 		return list;
 	}
@@ -218,7 +218,7 @@ public class BlockHelper implements ActorService {
 				block = oBlock2BlockInfo(oBlock.build());
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get block error :" + e.getMessage());
 		}
 		
 		return block;
@@ -237,7 +237,7 @@ public class BlockHelper implements ActorService {
 			if(oBlock != null)
 				block = oBlock2BlockInfo(oBlock);
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get block error " + e.getMessage());
 		}
 		return block;
 	}
@@ -252,7 +252,7 @@ public class BlockHelper implements ActorService {
 		try {
 			blockEntity = oBlockChainHelper.getBlockByNumber(blockHeight);
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get block error " + e.getMessage());
 		}
 		
 		return blockEntity;
@@ -271,7 +271,7 @@ public class BlockHelper implements ActorService {
 			if(oBlock != null)
 				block = oBlock2BlockInfo(oBlock);
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get block error " + e.getMessage());
 		}
 		return block;
 	}
@@ -322,8 +322,6 @@ public class BlockHelper implements ActorService {
 		addressInfo.addAddress(oBlockMiner.getAddress());
 		addressInfo.setBalance(oBlockMiner.getReward());
 		
-//		header.addNodes("127.0.0.1");
-		
 		return addressInfo;
 	}
 	
@@ -339,7 +337,6 @@ public class BlockHelper implements ActorService {
 			header = BlockHeader.newBuilder();
 			header.setBlockHash(DataUtil.byteString2String(oBlockHeader.getBlockHash(), encApi));
 			header.setParentHash(DataUtil.byteString2String(oBlockHeader.getParentHash(), encApi));
-//			header.setCoinbase(DataUtil.byteString2String(oBlockHeader.getCoinbase(), encApi));
 			header.setTxTrieRoot(DataUtil.byteString2String(oBlockHeader.getTxTrieRoot(), encApi));
 			header.setTimestamp(oBlockHeader.getTimestamp());
 			header.setHeight(oBlockHeader.getNumber());
@@ -392,7 +389,7 @@ public class BlockHelper implements ActorService {
 				tx = OTx2Tx(mt);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get tx error " + e.getMessage());
 		}
 		return tx;
 	}
@@ -408,7 +405,7 @@ public class BlockHelper implements ActorService {
 		try {
 			list = oBlockHelper.getTransactionByAddress(address);
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get tx error" + e.getMessage());
 		}
 		
 		//存在交易
@@ -433,7 +430,7 @@ public class BlockHelper implements ActorService {
 				blockHeight = oBlock.getHeader().getNumber();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get block error " + e.getMessage());
 		};
 		return blockHeight;
 	}
