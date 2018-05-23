@@ -1,7 +1,10 @@
 package org.brewchain.browserAPI.Helper;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -110,11 +113,21 @@ public class AddressHelper implements ActorService {
 
 				// transactions
 				LinkedList<Transaction.Builder> txsList = blockHelper.getTxByAddress(address);
+				Map<String, Transaction.Builder> map = new HashMap<String, Transaction.Builder>();
 				if (txsList != null && !txsList.isEmpty()) {
 					for (Transaction.Builder tx : txsList) {
-						if(tx != null)
-							account.addTransactions(tx.build());
+						if(tx != null){
+							tx = blockHelper.getTxByTxHash(encApi.hexDec(tx.getTxHash()));
+							map.put(tx.getTxHash(), tx);//去重
+//							account.addTransactions(tx.build());
+						}
 					}
+				}
+				
+				Iterator<String> it = map.keySet().iterator();
+				while(it.hasNext()){
+					String key = it.next();
+					account.addTransactions(map.get(key));
 				}
 
 				// tokenTransactions TODO
