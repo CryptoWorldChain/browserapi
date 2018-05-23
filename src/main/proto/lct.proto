@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package org.brewchain.browserAPI.gens;
+
+enum PLCTModule {
+    LCT = 0; // 交易
+};
+
+enum PLCTCommand {
+    REG = 0;//生成用户地址
+    ADD = 1;//增加balance
+    DTX = 2;//发起交易
+    SAT = 3;//生成创始块
+}
+
+message ReqReg{
+	int32 count = 1;//生成多少个地址
+}
+
+message RetReg{
+	int32 retCode = 1;//
+	string msg = 2;//
+	string address = 3;//
+	string pub = 4;//
+	string pki = 5;//
+}
+
+message ReqAdd{
+	string address = 1;//
+	int64 balance = 2;//
+}
+
+message RetAdd {
+	int32 retCode = 1;//
+	string msg = 2;//
+	int64 balance = 3;//
+}
+
+message ReqDtx {
+	string intputAddr = 1;//
+	string intputPuk = 2;//
+	string intputPki = 3;//
+	string outputAddr = 4;//
+	int64 amount = 5;//
+}
+
+message RetDtx {
+	int32 retCode = 1;//
+	string msg = 2;//
+	string txHash = 3;//
+}
+
+message ReqSat {
+	int32 block = 1;//
+}
+
+message RetSat {
+	int32 retCode = 1;//
+	string msg = 2;//
+}
