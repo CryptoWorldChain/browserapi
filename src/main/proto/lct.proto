@@ -11,6 +11,7 @@ enum PLCTCommand {
     ADD = 1;//增加balance
     DTX = 2;//发起交易
     SAT = 3;//生成创始块
+    NBL = 4;//打块
 }
 
 message ReqReg{
@@ -57,4 +58,14 @@ message ReqSat {
 message RetSat {
 	int32 retCode = 1;//
 	string msg = 2;//
+}
+
+message ReqNbl {
+
+}
+
+message RetNbl {
+	int32 retCode = 1;//
+	string msg = 2;//
+	string blockHash = 3;
 }
