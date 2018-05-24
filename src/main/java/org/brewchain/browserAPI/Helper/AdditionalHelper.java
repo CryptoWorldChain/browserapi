@@ -9,7 +9,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -38,6 +40,7 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 import onight.tfw.otransio.api.IPacketSender;
 import onight.tfw.otransio.api.PacketHelper;
 import onight.tfw.otransio.api.beans.FramePacket;
+import onight.tfw.outils.conf.PropHelper;
 import onight.tfw.outils.serialize.JsonSerializer;
 
 /**
@@ -62,9 +65,18 @@ public class AdditionalHelper implements ActorService {
 	@ActorRequire(name = "http", scope = "global")
 	IPacketSender sender;
 
-	private final static String QUERY_TX = "http://128.14.133.222:9200/transaction/_search";
+	private static PropHelper props = new PropHelper(null);
 
-	private final static String QUERY_NODE = "http://128.14.133.226:30800/fbs/pzp/pbinf.do";// 30802
+	private static String QUERY_TX = "http://128.14.133.222:9200/transaction/_search";
+	private static String QUERY_NODE = "http://128.14.133.226:30800/fbs/pzp/pbinf.do";// 30802
+	
+	 static {
+		QUERY_TX = props.get("query_tx", "http://128.14.133.222:9200/transaction/_search"); 
+		QUERY_NODE = props.get("query_node", "http://128.14.133.226:30800/fbs/pzp/pbinf.do");
+		log.debug("init query tx and node url successful");
+		log.debug("query_tx is : " + QUERY_TX);
+		log.debug("query_node is : " + QUERY_NODE);
+	}
 
 	private final static String[] DELAYS = new String[] { "1w", "1d", "1h", "10m" };
 
