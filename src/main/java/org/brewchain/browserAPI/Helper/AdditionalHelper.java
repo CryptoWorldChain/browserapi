@@ -2,6 +2,7 @@ package org.brewchain.browserAPI.Helper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -16,6 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.browserAPI.block.GetBatchBlocks;
 import org.brewchain.browserAPI.gens.Additional.Count;
 import org.brewchain.browserAPI.gens.Additional.Node;
 import org.brewchain.browserAPI.gens.Additional.ResGetAdditional;
@@ -103,7 +105,6 @@ public class AdditionalHelper implements ActorService {
 	 */
 	public ResGetAdditional.Builder getAdditional() {
 		ResGetAdditional.Builder ret = ResGetAdditional.newBuilder();
-		getAvgBlockAndTps(ret);
 
 		List<Node> dposList = getDposNode();
 		List<Node> raftList = getRaftNodes();
@@ -112,10 +113,10 @@ public class AdditionalHelper implements ActorService {
 		int pendingCount = 0;
 		int directCount = 0;
 		int allCount = 0;
-		pendingCount = getPendingCount(dposList);
-		pendingCount = getPendingCount(raftList);
-		directCount = getDirectCount(dposList);
-		directCount = getDirectCount(raftList);
+		pendingCount += getPendingCount(dposList);
+		pendingCount += getPendingCount(raftList);
+		directCount += getDirectCount(dposList);
+		directCount += getDirectCount(raftList);
 		
 		//两种状态确定节点总数
 		allCount = pendingCount + directCount;
@@ -124,7 +125,60 @@ public class AdditionalHelper implements ActorService {
 		ret.setPNodes(pendingCount + "");
 		ret.setDNodes(directCount + "");
 		
-		ret.setConfirm(DataUtil.formateStr(getConfirm() + ""));
+		List<Long> blockTimeList = new ArrayList<Long>(); 
+		List<Long> txTimeList = new ArrayList<Long>();
+		List<BlockInfo.Builder> blockList = blockHelper.getBatchBlocks(1, 10);
+		
+		int txCount = 0;
+		long confirmTimeSum = 0l;
+		for(BlockInfo.Builder block : blockList){
+			if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
+				long blockTime = block.getHeader().getTimestamp();
+				if(blockTime > 0){
+					blockTimeList.add(blockTime);
+					if(block.getBody() != null && !block.getBody().getTransactionsList().isEmpty()){
+						List<Transaction> txList = block.getBody().getTransactionsList();
+						for(Transaction tx : txList){
+							if(tx.getTimeStamp() > 0){
+								txTimeList.add(tx.getTimeStamp());
+								 confirmTimeSum += (blockTime - tx.getTimeStamp());
+							}
+						}
+						txCount += txList.size();
+					}
+				}
+			}
+		}
+		
+		double aveBlockTime = 0d;
+		if(blockTimeList.size() > 2){
+			//排序
+			Collections.sort(blockTimeList);
+			long allBlockTime = 0l;
+			for(int i = 1; i < blockTimeList.size(); i++){
+				allBlockTime += (blockTimeList.get(i) - blockTimeList.get(i - 1));
+			}
+			aveBlockTime = (double)allBlockTime / (blockTimeList.size() - 1);
+			aveBlockTime /= THOUSAND;
+		}
+		
+		double aveTxTime = 0d;
+		if(txTimeList.size() > 2){
+			//排序
+			Collections.sort(txTimeList);
+			aveTxTime = (double)(txTimeList.get(txTimeList.size() - 1) - txTimeList.get(0)) / txTimeList.size();
+			aveTxTime /= THOUSAND;
+		}
+		
+		double confirm = 0d;
+		if(confirmTimeSum > 0 && txCount > 0){
+			confirmTimeSum /= THOUSAND;//毫秒变秒
+			confirm = (double)confirmTimeSum / txCount;
+		}
+		
+		ret.setAvgBlockTime(DataUtil.formateStr(aveBlockTime + ""));
+		ret.setTps(DataUtil.formateStr(aveTxTime + ""));
+		ret.setConfirm(DataUtil.formateStr(confirm + ""));
 		
 		return ret;
 	}
@@ -132,33 +186,35 @@ public class AdditionalHelper implements ActorService {
 	/**
 	 * @return
 	 */
-	public double getConfirm(){
-		double confirm = 0d;
-		List<BlockInfo.Builder> blockList = blockHelper.getBatchBlocks(1, 5);
-		if(blockList != null){
-			int txCount = 0;
-			long confirmTimeSum = 0l;
-			for(BlockInfo.Builder block : blockList){
-				if(block.getBody() != null && !block.getBody().getTransactionsList().isEmpty()){
-					if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
-						long blockTime = block.getHeader().getTimestamp();
-						List<Transaction> txList = block.getBody().getTransactionsList();
-						for(Transaction tx : txList){
-							if(tx.getTimeStamp() > 0){
-								 confirmTimeSum += blockTime - tx.getTimeStamp();
-							}
-						}
-						txCount += txList.size();
-					}
-				}
-			}
-			
-			confirmTimeSum /= THOUSAND;//毫秒变秒
-			
-			confirm = (double)confirmTimeSum / txCount;
-		}
-		return confirm;
-	}
+//	public double getConfirm(){
+//		double confirm = 0d;
+//		List<BlockInfo.Builder> blockList = blockHelper.getBatchBlocks(1, 5);
+//		if(blockList != null){
+//			int txCount = 0;
+//			long confirmTimeSum = 0l;
+//			for(BlockInfo.Builder block : blockList){
+//				if(block.getBody() != null && !block.getBody().getTransactionsList().isEmpty()){
+//					if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
+//						long blockTime = block.getHeader().getTimestamp();
+//						List<Transaction> txList = block.getBody().getTransactionsList();
+//						for(Transaction tx : txList){
+//							if(tx.getTimeStamp() > 0){
+//								 confirmTimeSum += (blockTime - tx.getTimeStamp());
+//							}
+//						}
+//						txCount += txList.size();
+//					}
+//				}
+//			}
+//			
+//			if(confirmTimeSum > 0 && txCount > 0){
+//				confirmTimeSum /= THOUSAND;//毫秒变秒
+//				confirm = (double)confirmTimeSum / txCount;
+//			}
+//			
+//		}
+//		return confirm;
+//	}
 	
 	/**
 	 * 获取节点列表中 pending 状态的节点个数
@@ -324,110 +380,6 @@ public class AdditionalHelper implements ActorService {
 
 		return node.build();
 
-	}
-
-	/**
-	 * @param ret
-	 */
-	public void getAvgBlockAndTps(ResGetAdditional.Builder ret) {
-		double avg = 0.1d;
-		/**
-		 * 1、获取现有块的平均出块时间 1.1、缓存存在则从缓存中取出数据进行计算 1.2、缓存中不存在，则从新计算
-		 * 2、计算最新块之后的平均出块时间 2.1、比较缓存中最新区块高度是否是现有最新区块高度 2.1、计算公式：新的平均出块时间 =
-		 * （（现有平均出块时间 X 现有平均出块个数）+ 新的出块时间）/ 新的出块个数
-		 * 
-		 * 
-		 * 注意：缓存中还是现实中，平均出块时间都要是 ’秒 ‘
-		 */
-
-		try {
-			org.brewchain.account.gens.Block.BlockEntity.Builder theBestBlockEntity = blockHelper
-					.getTheBestBlockEntity();
-			int localBestHeight = 0;
-			String localBestHeightStr = BrowserAPILocalCache.additional.get("bestHeight");
-			if (localBestHeightStr.equals("0")) {
-				// 未缓存任何平均出块时间相关数据
-				// 没有缓存则需要重新计算，然后加入到缓存中
-				org.brewchain.account.gens.Block.BlockEntity.Builder genesisBlockEntity = blockHelper
-						.getGenesisBlockEntity();
-				LinkedList<org.brewchain.account.gens.Block.BlockEntity> list = blockHelper.getParentsBlocks(
-						theBestBlockEntity.getHeader().getBlockHash().toByteArray(),
-						genesisBlockEntity.getHeader().getBlockHash().toByteArray(),
-						theBestBlockEntity.getHeader().getNumber());
-
-				calAvg(list, ret);
-			} else {
-				String avgStr = BrowserAPILocalCache.additional.get("avg");
-				// 已经缓存到该块高度的平均出块时间
-				localBestHeight = Integer.parseInt(localBestHeightStr);
-				if (theBestBlockEntity.getHeader().getNumber() == localBestHeight) {
-					// 如果已缓存高度与实际高度相等，直接返回
-					// avg = Double.parseDouble(avgStr);
-					String tps = BrowserAPILocalCache.additional.get("tps");
-					ret.setTps(tps);
-					ret.setAvgBlockTime(avgStr);
-				} else {
-					// 已经计算过的txCount
-					int localTxCount = Integer.parseInt(BrowserAPILocalCache.additional.get("txCount"));
-					// 计算从该块开始到最新区块的平均出块时间
-					org.brewchain.account.gens.Block.BlockEntity oldestBlockEntity = blockHelper
-							.getBlockEntityByBlockHeight(localBestHeight);
-					LinkedList<org.brewchain.account.gens.Block.BlockEntity> list = blockHelper.getParentsBlocks(
-							theBestBlockEntity.getHeader().getBlockHash().toByteArray(),
-							oldestBlockEntity.getHeader().getBlockHash().toByteArray(),
-							theBestBlockEntity.getHeader().getNumber());
-					// 注意：这里计算的平均出块时间只是部分区块的，不完全，需要加上之前的
-					calAvg(list, ret);
-					double localAvg = Double.parseDouble(avgStr);
-					avg = ((Double.parseDouble(ret.getAvgBlockTime()) * list.size()) + (localAvg * localBestHeight))
-							/ (list.size() + localBestHeight);// ret中的avg是秒,缓存的avg也是秒
-					ret.setAvgBlockTime(DataUtil.formateStr(avg + ""));
-					double tps = (Double.parseDouble(ret.getAvgBlockTime()) * (list.size() + localBestHeight))
-							/ (ret.getTxCount() + localTxCount);
-					ret.setTps(DataUtil.formateStr(tps + ""));// avg
-																// 发生变化,tps也会发生变化
-				}
-
-			}
-			// 重新构建缓存
-			BrowserAPILocalCache.additional.put("avg", ret.getAvgBlockTime());
-			BrowserAPILocalCache.additional.put("bestHeight", theBestBlockEntity.getHeader().getNumber() + "");
-			BrowserAPILocalCache.additional.put("txCount", ret.getTxCount() + "");
-			BrowserAPILocalCache.additional.put("tps", ret.getTps());
-
-		} catch (ExecutionException e) {
-			log.error("get homepage's info error " + e.getMessage());
-		}
-	}
-
-	public void calAvg(LinkedList<org.brewchain.account.gens.Block.BlockEntity> list, ResGetAdditional.Builder ret) {
-		double avg = 0;
-		int txCount = 0;
-		int blockCount = 0;
-		if (list != null && !list.isEmpty()) {
-			blockCount = list.size();
-			int bestHeight = list.get(0).getHeader().getNumber();
-			long oldTimeStamp = list.get(0).getHeader().getTimestamp();
-			int i = 0;
-			for (org.brewchain.account.gens.Block.BlockEntity blockEntity : list) {
-				if (blockEntity != null && blockEntity.getHeader() != null) {
-					if (blockEntity.getHeader().getNumber() != bestHeight) {
-						txCount += blockEntity.getHeader().getTxHashsCount();
-						long a = oldTimeStamp - blockEntity.getHeader().getTimestamp();
-						avg = ((avg * i) + a) / (i + 1);
-						i += 1;
-						oldTimeStamp = blockEntity.getHeader().getTimestamp();
-						bestHeight = blockEntity.getHeader().getNumber();
-					}
-				} else {
-					log.warn("entity or entity's header is null");
-				}
-			}
-		}
-
-		ret.setAvgBlockTime(DataUtil.formateStr((avg / 1000) + ""));
-		ret.setTxCount(txCount);
-		ret.setTps(DataUtil.formateStr((Double.parseDouble(ret.getAvgBlockTime()) * blockCount / txCount) + ""));
 	}
 
 	public void searchTx(ResGetTxCount.Builder ret, long now) {
