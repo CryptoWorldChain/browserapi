@@ -32,6 +32,7 @@ message ReqGetBatchBlocks {
 message ResGetBatchBlocks {
 	int32 retCode = 1;
 	repeated BlockInfo blocks = 2;
+	int32 totalCount = 3;
 }
 
 message ReqGetBlockByBlockHash {

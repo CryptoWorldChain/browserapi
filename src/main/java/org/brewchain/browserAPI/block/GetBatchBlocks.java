@@ -42,7 +42,7 @@ public class GetBatchBlocks extends SessionModules<ReqGetBatchBlocks>{
 		ResGetBatchBlocks.Builder ret = ResGetBatchBlocks.newBuilder();
 		//默认参数
 		int pageNo = 1;
-		int pageSize = 10;//TODO 暂定 10 行
+		int pageSize = 10;// 暂定 10 行
 		if(pb != null){
 			if(pb.getPageNo() > 0){
 				pageNo = pb.getPageNo();
@@ -51,6 +51,8 @@ public class GetBatchBlocks extends SessionModules<ReqGetBatchBlocks>{
 				pageSize = pb.getPageSize();
 			}
 		}
+		
+		ret.setTotalCount(blockHelper.getTheBestBlockHeight());
 		
 		List<BlockInfo.Builder> list = blockHelper.getBatchBlocks(pageNo, pageSize);
 		

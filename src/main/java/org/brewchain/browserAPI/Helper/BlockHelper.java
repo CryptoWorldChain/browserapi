@@ -16,6 +16,7 @@ import org.brewchain.browserAPI.gens.Address.AddressInfo;
 import org.brewchain.browserAPI.gens.Block.BlockBody;
 import org.brewchain.browserAPI.gens.Block.BlockHeader;
 import org.brewchain.browserAPI.gens.Block.BlockInfo;
+import org.brewchain.browserAPI.gens.Block.ResGetBatchBlocks;
 import org.brewchain.browserAPI.gens.Tx.Transaction;
 import org.brewchain.browserAPI.gens.Tx.TxInput;
 import org.brewchain.browserAPI.gens.Tx.TxOutput;
@@ -159,31 +160,30 @@ public class BlockHelper implements ActorService {
 			
 			int bestHeight = oBlockChainHelper.getLastBlockNumber();
 			int first = bestHeight - offset;
-			if(first < 0)
-				first = 1;
-			int end = first - pageSize + 1;
-			if(end < 0){
-				end = 1;
-			}
-			
-			BlockEntity startBlock = oBlockChainHelper.getBlockByNumber(first);
-			BlockEntity endBlock = oBlockChainHelper.getBlockByNumber(end);
-			
-			if(startBlock != null && endBlock != null){
-				LinkedList<BlockEntity> list = getParentsBlocks(startBlock.getHeader().getBlockHash().toByteArray(), endBlock.getHeader().getBlockHash().toByteArray(), pageSize);
-				if(list != null && !list.isEmpty()){
-					retList = new LinkedList<BlockInfo.Builder>();
-					for (BlockEntity blockEntity : list) {
-						BlockInfo.Builder block = oBlock2BlockInfo(blockEntity);
-						if(block != null)
-							retList.add(block);
+			if(first > 0){
+				int end = first - pageSize + 1;
+				if(end < 0){
+					end = 0;//第0块
+				}
+				BlockEntity startBlock = oBlockChainHelper.getBlockByNumber(first);
+				BlockEntity endBlock = oBlockChainHelper.getBlockByNumber(end);
+				
+				if(startBlock != null && endBlock != null){
+					LinkedList<BlockEntity> list = getParentsBlocks(startBlock.getHeader().getBlockHash().toByteArray(), endBlock.getHeader().getBlockHash().toByteArray(), pageSize);
+					if(list != null && !list.isEmpty()){
+						retList = new LinkedList<BlockInfo.Builder>();
+						for (BlockEntity blockEntity : list) {
+							BlockInfo.Builder block = oBlock2BlockInfo(blockEntity);
+							if(block != null)
+								retList.add(block);
+						}
 					}
 				}
 			}
-			
 		} catch (Exception e) {
 			log.error("get batch blocks error" + e.getMessage());
 		}
+		
 		return retList;
 	}
 	
