@@ -131,20 +131,22 @@ public class AdditionalHelper implements ActorService {
 		
 		int txCount = 0;
 		long confirmTimeSum = 0l;
-		for(BlockInfo.Builder block : blockList){
-			if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
-				long blockTime = block.getHeader().getTimestamp();
-				if(blockTime > 0){
-					blockTimeList.add(blockTime);
-					if(block.getBody() != null && !block.getBody().getTransactionsList().isEmpty()){
-						List<Transaction> txList = block.getBody().getTransactionsList();
-						for(Transaction tx : txList){
-							if(tx.getTimeStamp() > 0){
-								txTimeList.add(tx.getTimeStamp());
-								 confirmTimeSum += (blockTime - tx.getTimeStamp());
+		if(blockList != null && !blockList.isEmpty()){
+			for(BlockInfo.Builder block : blockList){
+				if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
+					long blockTime = block.getHeader().getTimestamp();
+					if(blockTime > 0){
+						blockTimeList.add(blockTime);
+						if(block.getBody() != null && !block.getBody().getTransactionsList().isEmpty()){
+							List<Transaction> txList = block.getBody().getTransactionsList();
+							for(Transaction tx : txList){
+								if(tx.getTimeStamp() > 0){
+									txTimeList.add(tx.getTimeStamp());
+									 confirmTimeSum += (blockTime - tx.getTimeStamp());
+								}
 							}
+							txCount += txList.size();
 						}
-						txCount += txList.size();
 					}
 				}
 			}
