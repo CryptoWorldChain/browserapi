@@ -10,14 +10,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.brewchain.browserAPI.block.GetBatchBlocks;
 import org.brewchain.browserAPI.gens.Additional.Count;
 import org.brewchain.browserAPI.gens.Additional.Node;
 import org.brewchain.browserAPI.gens.Additional.ResGetAdditional;
@@ -131,6 +127,7 @@ public class AdditionalHelper implements ActorService {
 		
 		int txCount = 0;
 		long confirmTimeSum = 0l;
+		log.debug("debug for blockList : " + blockList == null ? " blockList is null" : "blockList is not null");
 		if(blockList != null && !blockList.isEmpty()){
 			for(BlockInfo.Builder block : blockList){
 				if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
@@ -184,39 +181,6 @@ public class AdditionalHelper implements ActorService {
 		
 		return ret;
 	}
-	
-	/**
-	 * @return
-	 */
-//	public double getConfirm(){
-//		double confirm = 0d;
-//		List<BlockInfo.Builder> blockList = blockHelper.getBatchBlocks(1, 5);
-//		if(blockList != null){
-//			int txCount = 0;
-//			long confirmTimeSum = 0l;
-//			for(BlockInfo.Builder block : blockList){
-//				if(block.getBody() != null && !block.getBody().getTransactionsList().isEmpty()){
-//					if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
-//						long blockTime = block.getHeader().getTimestamp();
-//						List<Transaction> txList = block.getBody().getTransactionsList();
-//						for(Transaction tx : txList){
-//							if(tx.getTimeStamp() > 0){
-//								 confirmTimeSum += (blockTime - tx.getTimeStamp());
-//							}
-//						}
-//						txCount += txList.size();
-//					}
-//				}
-//			}
-//			
-//			if(confirmTimeSum > 0 && txCount > 0){
-//				confirmTimeSum /= THOUSAND;//毫秒变秒
-//				confirm = (double)confirmTimeSum / txCount;
-//			}
-//			
-//		}
-//		return confirm;
-//	}
 	
 	/**
 	 * 获取节点列表中 pending 状态的节点个数

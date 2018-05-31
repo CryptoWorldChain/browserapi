@@ -2,7 +2,6 @@ package org.brewchain.browserAPI.Helper;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -16,7 +15,6 @@ import org.brewchain.browserAPI.gens.Address.AddressInfo;
 import org.brewchain.browserAPI.gens.Block.BlockBody;
 import org.brewchain.browserAPI.gens.Block.BlockHeader;
 import org.brewchain.browserAPI.gens.Block.BlockInfo;
-import org.brewchain.browserAPI.gens.Block.ResGetBatchBlocks;
 import org.brewchain.browserAPI.gens.Tx.Transaction;
 import org.brewchain.browserAPI.gens.Tx.TxInput;
 import org.brewchain.browserAPI.gens.Tx.TxOutput;
@@ -30,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import onight.osgi.annotation.NActorProvider;
 import onight.tfw.ntrans.api.ActorService;
 import onight.tfw.ntrans.api.annotation.ActorRequire;
-import onight.tfw.outils.serialize.UUIDGenerator;
 
 /**
  * @author jack
@@ -85,7 +82,7 @@ public class BlockHelper implements ActorService {
 		try {
 			oBlock = oBlockHelper.GetBestBlock();
 		} catch (Exception e) {
-			log.error("get the best block error" + e.getMessage());
+			log.error("get the best block entity error" + e.getMessage());
 		}
 		return oBlock;
 	}
@@ -112,7 +109,7 @@ public class BlockHelper implements ActorService {
 		try {
 			oBlock = oBlockChainHelper.getGenesisBlock().toBuilder();
 		} catch (Exception e) {
-			log.error("get genesis block error" + e.getMessage());
+			log.error("get genesis block entity error" + e.getMessage());
 		}
 		
 		return oBlock;
@@ -218,7 +215,7 @@ public class BlockHelper implements ActorService {
 				block = oBlock2BlockInfo(oBlock.build());
 			}
 		} catch (Exception e) {
-			log.error("get block error :" + e.getMessage());
+			log.error("get block by blockhash error :" + e.getMessage());
 		}
 		
 		return block;
@@ -237,7 +234,7 @@ public class BlockHelper implements ActorService {
 			if(oBlock != null)
 				block = oBlock2BlockInfo(oBlock);
 		} catch (Exception e) {
-			log.error("get block error " + e.getMessage());
+			log.error("get block by blockHeight error " + e.getMessage());
 		}
 		return block;
 	}
@@ -252,7 +249,7 @@ public class BlockHelper implements ActorService {
 		try {
 			blockEntity = oBlockChainHelper.getBlockByNumber(blockHeight);
 		} catch (Exception e) {
-			log.error("get block error " + e.getMessage());
+			log.error("get block entity by blockHeight error " + e.getMessage());
 		}
 		
 		return blockEntity;
@@ -271,7 +268,7 @@ public class BlockHelper implements ActorService {
 			if(oBlock != null)
 				block = oBlock2BlockInfo(oBlock);
 		} catch (Exception e) {
-			log.error("get block error " + e.getMessage());
+			log.error("get block by txHash error " + e.getMessage());
 		}
 		return block;
 	}
@@ -291,21 +288,22 @@ public class BlockHelper implements ActorService {
 			blockHeader.setMiner(oBlockMiner2Miner(blockEntity.getMiner()));
 			//nodes
 			List<MultiTransaction> txs = blockEntity.getBody().getTxsList();
-			for(MultiTransaction tx : txs){
-				blockHeader.addNodes(tx.getTxNode().getBcuid());//节点唯一性标识
+			if(txs != null && !txs.isEmpty()){
+				for(MultiTransaction tx : txs){
+					blockHeader.addNodes(tx.getTxNode().getBcuid());//节点唯一性标识
+				}
 			}
 		
 			block.setHeader(blockHeader);
 		}
 		
-		
-		
-		
 		BlockBody.Builder blockBody = BlockBody.newBuilder();
 		List<ByteString>  list = blockEntity.getHeader().getTxHashsList();
-		for (ByteString string : list) {
-			Transaction.Builder tx = getTxByTxHash(string.toByteArray());
-			blockBody.addTransactions(tx);
+		if(list != null && !list.isEmpty()){
+			for (ByteString string : list) {
+				Transaction.Builder tx = getTxByTxHash(string.toByteArray());
+				blockBody.addTransactions(tx);
+			}
 		}
 		
 		block.setBody(blockBody);
@@ -363,7 +361,7 @@ public class BlockHelper implements ActorService {
 		if(oBlockBody != null && !oBlockBody.getTxsList().isEmpty()){
 			body = BlockBody.newBuilder();
 			List<MultiTransaction> txs = oBlockBody.getTxsList();
-			if(txs != null){
+			if(txs != null && !txs.isEmpty()){
 				for (MultiTransaction mt : txs) {
 					Transaction.Builder tx = OTx2Tx(mt);
 					if(tx != null)
@@ -405,7 +403,7 @@ public class BlockHelper implements ActorService {
 		try {
 			list = oBlockHelper.getTransactionByAddress(address);
 		} catch (Exception e) {
-			log.error("get tx error" + e.getMessage());
+			log.error("get tx by address error" + e.getMessage());
 		}
 		
 		//存在交易
@@ -430,7 +428,7 @@ public class BlockHelper implements ActorService {
 				blockHeight = oBlock.getHeader().getNumber();
 			}
 		} catch (Exception e) {
-			log.error("get block error " + e.getMessage());
+			log.error("get block by txHash error " + e.getMessage());
 		};
 		return blockHeight;
 	}
