@@ -29,6 +29,10 @@ message RetReg{
 message ReqAdd{
 	string address = 1;//
 	int64 balance = 2;//
+	string token = 3;//
+	string symbol = 4;//
+	int32 count = 5;//
+	
 }
 
 message RetAdd {
