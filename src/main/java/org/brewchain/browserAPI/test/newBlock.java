@@ -58,7 +58,7 @@ public class newBlock extends SessionModules<ReqNbl> {
 		oSyncBlock.setHeader(newBlock.getHeader());
 		log.debug(String.format("==> 第 %s 块 hash %s 创建成功", oSyncBlock.getHeader().getNumber(), encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray())));
 		try {
-			oBlockHelper.ApplyBlock(oSyncBlock.build());
+			oBlockHelper.ApplyBlock(oSyncBlock);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
