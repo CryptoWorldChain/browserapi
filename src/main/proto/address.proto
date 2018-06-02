@@ -31,6 +31,7 @@ message AddressInfo {
     repeated Transaction tokenTransactions = 7;
     repeated Transaction cryptoTokenTransactions = 8;
     string comments = 10;
+    string bcuid = 11;
 };
 
 message Token {

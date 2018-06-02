@@ -319,6 +319,7 @@ public class BlockHelper implements ActorService {
 		AddressInfo.Builder addressInfo = AddressInfo.newBuilder();
 		addressInfo.addAddress(oBlockMiner.getAddress());
 		addressInfo.setBalance(oBlockMiner.getReward());
+		addressInfo.setBcuid(oBlockMiner.getBcuid());
 		
 		return addressInfo;
 	}
