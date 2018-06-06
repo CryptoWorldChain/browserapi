@@ -80,12 +80,19 @@ message BlockHeader {
 	repeated string txHashs = 10;
 	int32 txCount = 11;
 	int64 sliceId = 12;
-	AddressInfo miner = 13;//不完全信息，仅包含 balance,address.bcuid为新增字段，放在addressInfo中
+	BlockMiner miner = 13;//不完全信息，仅包含 balance,address.bcuid为新增字段，放在addressInfo中
 	repeated string nodes = 14;
 }
 
 message BlockBody {
 	repeated Transaction transactions = 1;
+}
+
+message BlockMiner {
+	string node = 1;
+	int32 reward = 3;
+	string address = 4;
+	string bcuid = 5;
 }
 
 
