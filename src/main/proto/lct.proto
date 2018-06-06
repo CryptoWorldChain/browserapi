@@ -12,6 +12,7 @@ enum PLCTCommand {
     DTX = 2;//发起交易
     NBL = 3;//打块
     GBS = 4;//获取所有区块的hash
+    SSS = 5;//start socket service
 }
 
 message ReqReg{
@@ -73,4 +74,12 @@ message RetGBS {
 	int32 retCode = 1;//
 	string msg = 2;//
 	repeated string hashs = 3;
+}
+
+message ReqSSS {
+
+}
+
+message RetSSS {
+	int32 retCode = 1;//
 }
