@@ -7,6 +7,7 @@ import org.brewchain.browserAPI.gens.Additional.ResGetAdditional;
 import org.brewchain.browserAPI.gens.Block.BlockInfo;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -42,7 +43,7 @@ public class WsServer extends WebSocketServer {
 	public String CONFIRM = "";
 
 	private WsServer(int port, BlockHelper blockHelper, AdditionalHelper additionalHelper) {
-		super(new InetSocketAddress(port));
+		super(new InetSocketAddress("192.168.10.27", 8888));
 		this.blockHelper = blockHelper;
 		this.additionalHelper = additionalHelper;
 	}
@@ -75,7 +76,7 @@ public class WsServer extends WebSocketServer {
 	@Override
 	public void onClose(WebSocket conn, int code, String reason, boolean remote) {
 		// 断开连接时候触发代码
-		userLeave(conn);
+		removeConnection(conn);
 		log.debug(reason);
 	}
 
@@ -97,6 +98,11 @@ public class WsServer extends WebSocketServer {
 			} else if(api.equals("/adi/pbget.do")){
 				adipbget(conn);
 			}
+		}else {
+			ObjectNode ret = mapper.createObjectNode();
+			ret.put("retCode", "-1");
+			ret.put("msg", "wrong message");
+			conn.send(ret.toString());
 		}
 	}
 
@@ -104,15 +110,7 @@ public class WsServer extends WebSocketServer {
 	public void onError(WebSocket conn, Exception ex) {
 		// 错误时候触发的代码
 		log.error("socket error : " + ex.getMessage());
-	}
-
-	/**
-	 * 去除掉失效的websocket链接
-	 * 
-	 * @param conn
-	 */
-	private void userLeave(WebSocket conn) {
-		WsPool.removeUser(conn);
+		removeConnection(conn);
 	}
 
 	@Override
@@ -142,6 +140,11 @@ public class WsServer extends WebSocketServer {
 				
 				if(!avgBlockTime.equals(AVG_BLOCK_TIME) || !tps.equals(TPS) || !nodes.equals(NODES) || !dNodes.equals(D_NODES) || !pNodes.equals(P_NODES) || !confirm.equals(CONFIRM)){
 					conn.send(format.printToString(ret.build()));
+					TPS = tps;
+					NODES = nodes;
+					D_NODES = dNodes;
+					P_NODES = pNodes;
+					CONFIRM = confirm;
 				}
 			}
 		}
