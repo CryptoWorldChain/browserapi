@@ -1,8 +1,6 @@
 package org.brewchain.browserAPI.additional;
 
 
-import java.util.Date;
-
 import org.brewchain.browserAPI.Helper.AdditionalHelper;
 import org.brewchain.browserAPI.gens.Additional.PADICommand;
 import org.brewchain.browserAPI.gens.Additional.PADIModule;
@@ -39,8 +37,8 @@ public class GetRecentTxCount extends SessionModules<ReqGetTxCount>{
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqGetTxCount pb, final CompleteHandler handler) {
 		ResGetTxCount.Builder ret = ResGetTxCount.newBuilder();
-		additionalHelper.searchTx(ret, new Date().getTime());
-		ret.setRetCode(1);
+//		additionalHelper.searchTx(ret, new Date().getTime());
+		ret.setRetCode(-1);
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));
 	}
 }

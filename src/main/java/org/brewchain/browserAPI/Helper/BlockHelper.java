@@ -82,27 +82,17 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 */
 	public org.brewchain.account.gens.Block.BlockEntity.Builder getTheBestBlockEntity() {
-		org.brewchain.account.gens.Block.BlockEntity.Builder oBlock = null;
+		org.brewchain.account.gens.Block.BlockEntity oBlock = null;
+		int bestHeight = getLastStableBlockNumber();
 		try {
-			oBlock = oBlockHelper.GetBestBlock();
+			oBlock = oBlockChainHelper.getBlockByNumber(bestHeight);
 		} catch (Exception e) {
 			log.error("get the best block entity error" + e.getMessage());
 		}
-		return oBlock;
-	}
-
-	/**
-	 * 获取 最新 block height
-	 * 
-	 * @return
-	 */
-	public synchronized int getTheBestBlockHeight() {
-		org.brewchain.account.gens.Block.BlockEntity.Builder blockEntity = getTheBestBlockEntity();
-		int theBestBlockHeight = 1;
-		if (blockEntity != null && blockEntity.getHeader() != null) {
-			theBestBlockHeight = blockEntity.getHeader().getNumber();
+		if(oBlock != null){
+			return oBlock.toBuilder();
 		}
-		return theBestBlockHeight;
+		return null;
 	}
 
 	/**
@@ -162,7 +152,7 @@ public class BlockHelper implements ActorService {
 			 * byte[] endBlockHash, int maxCount)
 			 */
 
-			int bestHeight = oBlockChainHelper.getLastBlockNumber();
+			int bestHeight = getLastStableBlockNumber();
 			int first = bestHeight - offset;
 			if (first > 0) {
 				int end = first - pageSize + 1;
@@ -189,6 +179,20 @@ public class BlockHelper implements ActorService {
 		}
 
 		return retList;
+	}
+	
+	/**
+	 * 获取稳定的最新块高度
+	 * @return
+	 */
+	public int getLastStableBlockNumber(){
+		try {
+			int bestHeight = oBlockChainHelper.getLastStableBlockNumber();
+			return bestHeight;
+		} catch (Exception e) {
+			log.error("get the laste stable block number error" + e.getMessage());
+		}
+		return 0;
 	}
 
 	/**

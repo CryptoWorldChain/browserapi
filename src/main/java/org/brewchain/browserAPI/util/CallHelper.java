@@ -72,9 +72,6 @@ public class CallHelper {
 			out.print(parameter);
 			out.flush();
 			int httpStatus = conn.getResponseCode();
-			log.debug("http Request Status" + httpStatus);
-			log.debug("http Request url===>"+url);
-			log.debug("http Request params===>"+parameter);
 			if (httpStatus == 200 || httpStatus == 202 || httpStatus == 201 || httpStatus == 204) {
 				in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 				String inputLine;
@@ -106,7 +103,6 @@ public class CallHelper {
 			}
 		}
 	
-		log.debug("api returns====>" + ret);
 		return ret;
 	}
 }

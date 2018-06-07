@@ -103,16 +103,13 @@ public class AdditionalHelper implements ActorService {
 		ResGetAdditional.Builder ret = ResGetAdditional.newBuilder();
 
 		List<Node> dposList = getDposNode();
-		List<Node> raftList = getRaftNodes();
 		
 		//确定不同状态的节点总数
 		int pendingCount = 0;
 		int directCount = 0;
 		int allCount = 0;
 		pendingCount += getPendingCount(dposList);
-		pendingCount += getPendingCount(raftList);
 		directCount += getDirectCount(dposList);
-		directCount += getDirectCount(raftList);
 		
 		//两种状态确定节点总数
 		allCount = pendingCount + directCount;
@@ -220,18 +217,9 @@ public class AdditionalHelper implements ActorService {
 	 * @param ret
 	 */
 	public List<Node> getNodes() {
-		List<Node> raftList = getRaftNodes();
 		List<Node> dposList = getDposNode();
-		List<Node> allNode = new LinkedList<Node>();
-		if (raftList != null && !raftList.isEmpty()) {
-			allNode.addAll(raftList);
-		}
 
-		if (dposList != null && !dposList.isEmpty()) {
-			allNode.addAll(dposList);
-		}
-
-		return allNode;
+		return dposList;
 	}
 
 	/**
@@ -501,32 +489,6 @@ public class AdditionalHelper implements ActorService {
 	 */
 	public synchronized int[] searchTxBetweenRange(long gt, long lt, String delay) {
 		ObjectMapper mapper = new ObjectMapper();
-//		
-//		ObjectNode param = mapper.createObjectNode();
-//		ObjectNode query = mapper.createObjectNode();
-//		ObjectNode bool = mapper.createObjectNode();
-//		ArrayNode must = mapper.createArrayNode();
-//		ObjectNode must1 = mapper.createObjectNode();
-//		ObjectNode range = mapper.createObjectNode();
-//		ObjectNode timestamp = mapper.createObjectNode();
-//		timestamp.put("gt", gt);
-//		timestamp.put("lt", lt);
-//		range.set("@timestamp", timestamp);
-//		must1.set("range", range);
-//		must.add(must1);
-//		bool.set("must", must);
-//		query.set("bool", bool);
-//		param.set("query", query);
-//		ObjectNode aggs = mapper.createObjectNode();
-//		ObjectNode by_time = mapper.createObjectNode();
-//		ObjectNode date_histogram = mapper.createObjectNode();
-//		date_histogram.put("field", "@timestamp");
-//		date_histogram.put("interval", delay);
-//
-//		by_time.set("date_histogram", date_histogram);
-//		aggs.set("by_time", by_time);
-//		param.set("aggs", aggs);
-		
 		String str = "{\"query\" :" +
                 "{\"constant_score\" : " +
                         "{\"filter\" : " +
