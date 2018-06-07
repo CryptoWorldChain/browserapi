@@ -123,7 +123,7 @@ public class AdditionalHelper implements ActorService {
 		
 		List<Long> blockTimeList = new ArrayList<Long>(); 
 		List<Long> txTimeList = new ArrayList<Long>();
-		List<BlockInfo.Builder> blockList = blockHelper.getBatchBlocks(1, 10);
+		List<BlockInfo.Builder> blockList = blockHelper.getBatchBlocks(1, 5);
 		
 		int txCount = 0;
 		long confirmTimeSum = 0l;
@@ -238,7 +238,7 @@ public class AdditionalHelper implements ActorService {
 	 * @return
 	 */
 	public List<Node> getRaftNodes() {
-		List<Node> raftList = getNodesBase(NID_RAFT);
+		List<Node> raftList = getNodesBase1(NID_RAFT);
 		return raftList;
 	}
 
@@ -246,14 +246,14 @@ public class AdditionalHelper implements ActorService {
 	 * @return
 	 */
 	public List<Node> getDposNode() {
-		List<Node> dposList = getNodesBase(NID_DPOS);
+		List<Node> dposList = getNodesBase2(NID_DPOS);
 		return dposList;
 	}
 
 	/**
 	 * @return
 	 */
-	public List<Node> getNodesBase(String nodeType) {
+	public List<Node> getNodesBase1(String nodeType) {
 		ObjectMapper mapper = new ObjectMapper();
 		Map<String, Object> reqParam = new HashMap<String, Object>();
 		reqParam.put("nid", nodeType);
@@ -261,7 +261,7 @@ public class AdditionalHelper implements ActorService {
 
 		List<Node> list = new LinkedList<Node>();
 		try {
-			val nodeRet = sender.send(fp, 30000);
+			val nodeRet = sender.send(fp, 3000);
 			if (nodeRet.getBody() != null && nodeRet.getBody().length > 0) {
 				JsonNode jsonObject = mapper.readTree(nodeRet.getBody());
 
@@ -289,6 +289,44 @@ public class AdditionalHelper implements ActorService {
 			log.error(String.format("get node info error : %s", e.getMessage()));
 		}
 
+		return list;
+	}
+	public List<Node> getNodesBase2(String nodeType) {
+		ObjectMapper mapper = new ObjectMapper();
+		Map<String, Object> reqParam = new HashMap<String, Object>();
+		reqParam.put("nid", nodeType);
+		FramePacket fp = PacketHelper.buildUrlFromJson(JsonSerializer.formatToString(reqParam), "POST", QUERY_NODE);
+		
+		List<Node> list = new LinkedList<Node>();
+		try {
+			val nodeRet = sender.send(fp, 3000);
+			if (nodeRet.getBody() != null && nodeRet.getBody().length > 0) {
+				JsonNode jsonObject = mapper.readTree(nodeRet.getBody());
+				
+				if (jsonObject != null) {
+					
+					//相应的要添加节点的类型（raft、dpos）和节点的状态（pending、direct）
+					if (jsonObject.has("dnodes")) {
+						ArrayNode a = (ArrayNode) jsonObject.get("dnodes");
+						for (JsonNode jn : a) {
+							list.add(getNodeInfo(jn, nodeType, DIRECT));
+						}
+					}
+					
+					if (jsonObject.has("pnodes")) {
+						ArrayNode a = (ArrayNode) jsonObject.get("pnodes");
+						for (JsonNode jn : a) {
+							list.add(getNodeInfo(jn, nodeType, PENDING));
+						}
+					}
+				}
+			} else {
+				log.error("request node list is empty");
+			}
+		} catch (IOException e) {
+			log.error(String.format("get node info error : %s", e.getMessage()));
+		}
+		
 		return list;
 	}
 
@@ -463,33 +501,60 @@ public class AdditionalHelper implements ActorService {
 	 */
 	public synchronized int[] searchTxBetweenRange(long gt, long lt, String delay) {
 		ObjectMapper mapper = new ObjectMapper();
-		ObjectNode param = mapper.createObjectNode();
-		ObjectNode query = mapper.createObjectNode();
-		ObjectNode bool = mapper.createObjectNode();
-		ArrayNode must = mapper.createArrayNode();
-		ObjectNode must1 = mapper.createObjectNode();
-		ObjectNode range = mapper.createObjectNode();
-		ObjectNode timestamp = mapper.createObjectNode();
-		timestamp.put("gt", gt);
-		timestamp.put("lt", lt);
-		range.set("@timestamp", timestamp);
-		must1.set("range", range);
-		must.add(must1);
-		bool.set("must", must);
-		query.set("bool", bool);
-		param.set("query", query);
-		ObjectNode aggs = mapper.createObjectNode();
-		ObjectNode by_time = mapper.createObjectNode();
-		ObjectNode date_histogram = mapper.createObjectNode();
-		date_histogram.put("field", "@timestamp");
-		date_histogram.put("interval", delay);
-
-		by_time.set("date_histogram", date_histogram);
-		aggs.set("by_time", by_time);
-		param.set("aggs", aggs);
+//		
+//		ObjectNode param = mapper.createObjectNode();
+//		ObjectNode query = mapper.createObjectNode();
+//		ObjectNode bool = mapper.createObjectNode();
+//		ArrayNode must = mapper.createArrayNode();
+//		ObjectNode must1 = mapper.createObjectNode();
+//		ObjectNode range = mapper.createObjectNode();
+//		ObjectNode timestamp = mapper.createObjectNode();
+//		timestamp.put("gt", gt);
+//		timestamp.put("lt", lt);
+//		range.set("@timestamp", timestamp);
+//		must1.set("range", range);
+//		must.add(must1);
+//		bool.set("must", must);
+//		query.set("bool", bool);
+//		param.set("query", query);
+//		ObjectNode aggs = mapper.createObjectNode();
+//		ObjectNode by_time = mapper.createObjectNode();
+//		ObjectNode date_histogram = mapper.createObjectNode();
+//		date_histogram.put("field", "@timestamp");
+//		date_histogram.put("interval", delay);
+//
+//		by_time.set("date_histogram", date_histogram);
+//		aggs.set("by_time", by_time);
+//		param.set("aggs", aggs);
+		
+		String str = "{\"query\" :" +
+                "{\"constant_score\" : " +
+                        "{\"filter\" : " +
+                            "{\"range\" : " +
+                                    "{ \"@timestamp\" : " +
+                                            "{" +
+                                                "\"gte\" : " + gt + "," +
+                                                "\"lte\" : " + lt +
+                                            "}" +
+                                    "}" +
+                            "}" +
+                        "}" +
+                "}," +
+                "\"aggs\" : " +
+                "{" +
+                    "\"by_time\" : " +
+                    "{\"date_histogram\" : " +
+                        "{" +
+                            "\"field\" : \"@timestamp\"," +
+                            "\"interval\" : \"" + delay + "\"" +
+                        "}" +
+                    "}" +
+                "}" +
+            "}";
+		
 		log.debug("request txCount between " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSSS").format(new Date(gt))
 				+ " and" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSSS").format(new Date(lt)));
-		String ret = CallHelper.remoteCallPost(QUERY_TX, param.toString());
+		String ret = CallHelper.remoteCallPost(QUERY_TX, str);
 		JsonNode jn = null;
 		try {
 			if(ret != null)
