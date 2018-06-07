@@ -77,7 +77,8 @@ message RetGBS {
 }
 
 message ReqSSS {
-
+	string ip = 1;
+	int32 port = 2;
 }
 
 message RetSSS {

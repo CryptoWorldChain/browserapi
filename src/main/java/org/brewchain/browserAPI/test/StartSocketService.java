@@ -1,5 +1,6 @@
 package org.brewchain.browserAPI.test;
 
+import org.apache.commons.lang3.StringUtils;
 import org.brewchain.browserAPI.Helper.AdditionalHelper;
 import org.brewchain.browserAPI.Helper.BlockHelper;
 import org.brewchain.browserAPI.Helper.WsServer;
@@ -43,7 +44,13 @@ public class StartSocketService extends SessionModules<ReqSSS> {
 	public void onPBPacket(final FramePacket pack, final ReqSSS pb, final CompleteHandler handler) {
 		RetSSS.Builder ret = RetSSS.newBuilder();
 
-		WsServer socketService = WsServer.getInstance(8888, this.blockHelper, this.additionalHelper);
+		String ip = "127.0.0.1";
+		int port = 8888;
+		if(pb != null){
+			ip = StringUtils.isNotBlank(pb.getIp()) ? pb.getIp() : "127.0.0.1";
+			port = pb.getPort();
+		}
+		WsServer socketService = WsServer.getInstance(ip, port, this.blockHelper, this.additionalHelper);
 		try{
 			socketService.start();
 		} catch (Exception e){

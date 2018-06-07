@@ -2,9 +2,11 @@ package org.brewchain.browserAPI.Helper;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
 
 import org.brewchain.browserAPI.gens.Additional.ResGetAdditional;
 import org.brewchain.browserAPI.gens.Block.BlockInfo;
+import org.brewchain.browserAPI.gens.Block.ResGetBatchBlocks;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
@@ -14,6 +16,7 @@ import org.java_websocket.server.WebSocketServer;
 
 import lombok.extern.slf4j.Slf4j;
 import onight.tfw.outils.bean.JsonPBFormat;
+import onight.tfw.outils.conf.PropHelper;
 
 /**
  * @author jack
@@ -41,14 +44,16 @@ public class WsServer extends WebSocketServer {
 	public String D_NODES = "";
 	public String P_NODES = "";
 	public String CONFIRM = "";
-
-	private WsServer(int port, BlockHelper blockHelper, AdditionalHelper additionalHelper) {
-		super(new InetSocketAddress("192.168.10.27", 8888));
+	
+	PropHelper props = new PropHelper(null);
+	
+	private WsServer(String ip, int port, BlockHelper blockHelper, AdditionalHelper additionalHelper) {
+		super(new InetSocketAddress(ip, port));
 		this.blockHelper = blockHelper;
 		this.additionalHelper = additionalHelper;
 	}
 
-	public static WsServer getInstance(int port, BlockHelper blockHelper, AdditionalHelper additionalHelper) {
+	public static WsServer getInstance(String ip, int port, BlockHelper blockHelper, AdditionalHelper additionalHelper) {
 		if (instance == null) {
 			WsServer singleton;
 			synchronized (WsServer.class) {
@@ -56,7 +61,7 @@ public class WsServer extends WebSocketServer {
 				if (singleton == null) {
 					synchronized (WsServer.class) {
 						if (singleton == null) {
-							singleton = new WsServer(port, blockHelper, additionalHelper);
+							singleton = new WsServer(ip, port, blockHelper, additionalHelper);
 						}
 					}
 					instance = singleton;
@@ -166,7 +171,15 @@ public class WsServer extends WebSocketServer {
 				int height = bestBlock.getHeader().getHeight();
 				if(height > BEST_HEIGHT){
 					BEST_HEIGHT = height;
-					conn.send(format.printToString(bestBlock.build()));
+					List<BlockInfo.Builder> list = blockHelper.getBatchBlocks(1, 10);
+					ResGetBatchBlocks.Builder ret = ResGetBatchBlocks.newBuilder();
+					ret.setRetCode(1);
+					if(list != null && !list.isEmpty()){
+						for (BlockInfo.Builder block : list) {
+							ret.addBlocks(block);
+						}
+					}
+					conn.send(format.printToString(ret.build()));
 				}
 			}
 			
