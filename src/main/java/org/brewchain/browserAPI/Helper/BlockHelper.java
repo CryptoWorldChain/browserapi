@@ -652,7 +652,7 @@ public class BlockHelper implements ActorService {
 		}
 
 		if (data != null)
-			tx.setData(DataUtil.byteString2String(data, encApi));
+			tx.setData(data.toStringUtf8());
 
 		return tx;
 	}
@@ -661,16 +661,6 @@ public class BlockHelper implements ActorService {
 
 	public List<String> getBlocksHash() {
 		List<String> list = new ArrayList<String>();
-//		int height = getTheBestBlockHeight();
-//		while (height >= 0) {
-//			byte[] hashs = oBlockChainHelper.getBlockChainStore().getStorage().get(height);
-//			System.out.println(String.format("the %s block's hash is ", height, encApi.hexEnc(hash)));
-//			String format = "高度：" + height + " hash： " + encApi.hexEnc(hash);
-//			list.add(format);
-//			for (byte[] hash : hashs) {
-//			}
-//			height -= 1;
-//		}
 
 		return list;
 	}
