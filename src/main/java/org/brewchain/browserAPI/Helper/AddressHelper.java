@@ -107,6 +107,7 @@ public class AddressHelper implements ActorService {
 
 								cryptoToken.addTokens(ctv);
 							}
+							account.addCryptoTokens(cryptoToken);
 						}
 					}
 				}

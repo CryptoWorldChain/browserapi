@@ -1,6 +1,8 @@
 package org.brewchain.browserAPI.Helper;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -298,6 +300,21 @@ public class BlockHelper implements ActorService {
 		BlockInfo.Builder block = null;
 		if(blockEntity != null){
 			block = BlockInfo.newBuilder();
+			
+			BlockBody.Builder blockBody = BlockBody.newBuilder();
+			List<ByteString> list = blockEntity.getHeader().getTxHashsList();
+			List<Transaction.Builder> txList = new ArrayList<>();
+			if (list != null && !list.isEmpty()) {
+				for (ByteString string : list) {
+					Transaction.Builder tx = getTxByTxHash(string.toByteArray());
+					blockBody.addTransactions(tx);
+					txList.add(tx);
+				}
+			}
+			
+			String aveTx = "0.00";
+			
+			
 			// header
 			BlockHeader.Builder blockHeader = oBlockHeader2BlockHeader(blockEntity.getHeader());
 			if (blockHeader != null) {
@@ -310,17 +327,29 @@ public class BlockHelper implements ActorService {
 //						blockHeader.addNodes(tx.getTxNode().getBcuid());// 节点唯一性标识
 //					}
 //				}
+				
+				if(txList.size() > 2){
+					long sumTime = 0L;
+					List<Long> times = new ArrayList<>();
+					for(int i = 0; i < txList.size(); i++){
+						times.add(txList.get(i).getTimeStamp());
+					}
+					
+					Collections.sort(times);
+					
+					long temp = times.get(0);
+					for(int i = 1; i < times.size(); i++){
+						sumTime = times.get(i) - temp;
+						temp = times.get(i);
+					}
+					
+					double a = (double)sumTime / txList.size();
+					aveTx = DataUtil.formateStr(a + "");
+				}
+				
+				blockHeader.setAvetx(aveTx);
 
 				block.setHeader(blockHeader);
-			}
-
-			BlockBody.Builder blockBody = BlockBody.newBuilder();
-			List<ByteString> list = blockEntity.getHeader().getTxHashsList();
-			if (list != null && !list.isEmpty()) {
-				for (ByteString string : list) {
-					Transaction.Builder tx = getTxByTxHash(string.toByteArray());
-					blockBody.addTransactions(tx);
-				}
 			}
 
 			block.setBody(blockBody);

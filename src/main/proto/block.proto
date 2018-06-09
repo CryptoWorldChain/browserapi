@@ -82,6 +82,7 @@ message BlockHeader {
 	int64 sliceId = 12;
 	BlockMiner miner = 13;//不完全信息，仅包含 balance,address.bcuid为新增字段，放在addressInfo中
 	repeated string nodes = 14;
+	string avetx = 15;//块内平均交易时间
 }
 
 message BlockBody {
