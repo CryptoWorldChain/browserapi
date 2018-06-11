@@ -13,6 +13,16 @@ enum PBLKCommand {
 	GHA = 2; // 根据 block hash 获取 block 详情	ReqGetBlockByBlockHash
 	GHE = 3; // 根据 block height 获取 block 详情	ReqGetBlockByBlockHeight
 	GTH = 4; // 根据 tx hash 获取 block 详情	ReqGetBlockByTxHash
+	GGB = 5; // 获取创始块 ReqGetGenisBlock
+}
+
+message ReqGetGenisBlock {
+
+}
+
+message RetGetGenisBlock {
+	int32 retCode = 1;
+	BlockInfo block = 2;
 }
 
 message ReqGetTheBestBlock {

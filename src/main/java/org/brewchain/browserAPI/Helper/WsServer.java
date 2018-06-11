@@ -159,7 +159,7 @@ public class WsServer extends WebSocketServer {
 	 * @param conn
 	 */
 	public void blkgtb (WebSocket conn) {
-		BlockInfo.Builder bestBlock = null;
+		BlockInfo bestBlock = null;
 		while (true) {
 			try {
 				Thread.sleep(DELAY);
@@ -171,11 +171,11 @@ public class WsServer extends WebSocketServer {
 				int height = bestBlock.getHeader().getHeight();
 				if(height > BEST_HEIGHT){
 					BEST_HEIGHT = height;
-					List<BlockInfo.Builder> list = blockHelper.getBatchBlocks(1, 10);
+					List<BlockInfo> list = blockHelper.getBatchBlocks(1, 10);
 					ResGetBatchBlocks.Builder ret = ResGetBatchBlocks.newBuilder();
 					ret.setRetCode(1);
 					if(list != null && !list.isEmpty()){
-						for (BlockInfo.Builder block : list) {
+						for (BlockInfo block : list) {
 							ret.addBlocks(block);
 						}
 					}

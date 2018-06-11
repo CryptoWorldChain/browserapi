@@ -37,7 +37,7 @@ public class GetTheBestBlock extends SessionModules<ReqGetTheBestBlock> {
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqGetTheBestBlock pb, final CompleteHandler handler) {
 		ResGetTheBestBlock.Builder ret = ResGetTheBestBlock.newBuilder();
-		BlockInfo.Builder block = blockHelper.getTheBestBlock();
+		BlockInfo block = blockHelper.getTheBestBlock();
 		if (block != null) {
 			ret.setBlock(block);
 		}

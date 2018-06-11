@@ -7,7 +7,6 @@ import org.brewchain.browserAPI.gens.Tx.PTRSCommand;
 import org.brewchain.browserAPI.gens.Tx.PTRSModule;
 import org.brewchain.browserAPI.gens.Tx.ReqGetTxByTxHash;
 import org.brewchain.browserAPI.gens.Tx.ResGetTxByTxHash;
-import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +25,6 @@ public class GetTxByTxHash extends SessionModules<ReqGetTxByTxHash>{
 	@ActorRequire(name = "blockHelper", scope = "global")
 	BlockHelper blockHelper;
 	
-	@ActorRequire(name = "bc_encoder", scope = "global")
-	EncAPI encApi;
-	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTRSCommand.GTT.name() };
@@ -46,7 +42,7 @@ public class GetTxByTxHash extends SessionModules<ReqGetTxByTxHash>{
 		try{
 			ret.setRetCode(1);
 			if(pb != null && StringUtils.isNotBlank(pb.getTxHash())){
-				ret.setTransaction(blockHelper.getTxByTxHash(encApi.hexDec(pb.getTxHash())));
+				ret.setTransaction(blockHelper.getTxByTxHash(pb.getTxHash()));
 			}
 		} catch (Exception e){
 			log.error("get tx error " + e.getMessage());

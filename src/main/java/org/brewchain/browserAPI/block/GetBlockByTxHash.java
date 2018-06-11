@@ -8,7 +8,6 @@ import org.brewchain.browserAPI.gens.Block.PBLKCommand;
 import org.brewchain.browserAPI.gens.Block.PBLKTModule;
 import org.brewchain.browserAPI.gens.Block.ReqGetBlockByTxHash;
 import org.brewchain.browserAPI.gens.Block.ResGetBlockByTxHash;
-import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +25,6 @@ public class GetBlockByTxHash extends SessionModules<ReqGetBlockByTxHash>{
 
 	@ActorRequire(name = "blockHelper", scope = "global")
 	BlockHelper blockHelper;
-
-	@ActorRequire(name = "bc_encoder", scope = "global")
-	EncAPI encApi;
 	
 	@Override
 	public String[] getCmds() {
@@ -44,7 +40,7 @@ public class GetBlockByTxHash extends SessionModules<ReqGetBlockByTxHash>{
 	public void onPBPacket(final FramePacket pack, final ReqGetBlockByTxHash pb, final CompleteHandler handler) {
 		ResGetBlockByTxHash.Builder ret = ResGetBlockByTxHash.newBuilder();
 		if(pb != null && StringUtils.isNotBlank(pb.getTxHash())){
-			BlockInfo.Builder block = blockHelper.getBlockByTxHash(encApi.hexDec(pb.getTxHash()));
+			BlockInfo block = blockHelper.getBlockByTxHash(pb.getTxHash());
 			if(block != null){
 				ret.setBlock(block);
 			}

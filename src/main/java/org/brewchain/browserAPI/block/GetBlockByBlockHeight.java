@@ -38,7 +38,7 @@ public class GetBlockByBlockHeight extends SessionModules<ReqGetBlockByBlockHeig
 	public void onPBPacket(final FramePacket pack, final ReqGetBlockByBlockHeight pb, final CompleteHandler handler) {
 		ResGetBlockByBlockHeight.Builder ret = ResGetBlockByBlockHeight.newBuilder();
 		if(pb != null && pb.getBlockHeight() >= 0){
-			BlockInfo.Builder block = blockHelper.getBlockByBlockHeight(pb.getBlockHeight());
+			BlockInfo block = blockHelper.getBlockByBlockHeight(pb.getBlockHeight());
 			if(block != null)
 				ret.setBlock(block);
 			

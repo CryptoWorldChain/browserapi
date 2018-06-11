@@ -27,7 +27,6 @@ import org.fc.brewchain.bcapi.EncAPI;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import lombok.Data;
 import lombok.val;
@@ -120,13 +119,13 @@ public class AdditionalHelper implements ActorService {
 		
 		List<Long> blockTimeList = new ArrayList<Long>(); 
 		List<Long> txTimeList = new ArrayList<Long>();
-		List<BlockInfo.Builder> blockList = blockHelper.getBatchBlocks(1, 5);
+		List<BlockInfo> blockList = blockHelper.getBatchBlocks(1, 5);
 		
 		int txCount = 0;
 		long confirmTimeSum = 0l;
 		log.debug("debug for blockList : " + blockList == null ? " blockList is null" : "blockList is not null");
 		if(blockList != null && !blockList.isEmpty()){
-			for(BlockInfo.Builder block : blockList){
+			for(BlockInfo block : blockList){
 				if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
 					long blockTime = block.getHeader().getTimestamp();
 					if(blockTime > 0){

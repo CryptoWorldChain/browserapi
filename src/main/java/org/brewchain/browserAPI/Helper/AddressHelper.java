@@ -1,19 +1,17 @@
 package org.brewchain.browserAPI.Helper;
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.brewchain.account.gens.Act.Account;
-import org.brewchain.account.gens.Act.AccountCryptoToken;
-import org.brewchain.account.gens.Act.AccountCryptoValue;
-import org.brewchain.account.gens.Act.AccountTokenValue;
-import org.brewchain.account.gens.Act.AccountValue;
+import org.brewchain.evmapi.gens.Act.Account;
+import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
+import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
+import org.brewchain.evmapi.gens.Act.AccountTokenValue;
+import org.brewchain.evmapi.gens.Act.AccountValue;
 import org.brewchain.browserAPI.gens.Address.AddressInfo;
 import org.brewchain.browserAPI.gens.Address.CryptoToken;
 import org.brewchain.browserAPI.gens.Address.CryptoTokenValue;
@@ -56,10 +54,10 @@ public class AddressHelper implements ActorService {
 	 * @param address
 	 * @return
 	 */
-	public AddressInfo.Builder getAccountDetailByAddress(byte[] address) {
+	public AddressInfo.Builder getAccountDetailByAddress(String address) {
 		AddressInfo.Builder account = null;
 
-		Account oAccount = accountHelper.GetAccount(address);
+		Account oAccount = accountHelper.GetAccount(encApi.hexDec(address));
 		if (oAccount != null) {
 			account = AddressInfo.newBuilder();
 			AccountValue oAccountValue = oAccount.getValue();
@@ -113,30 +111,13 @@ public class AddressHelper implements ActorService {
 				}
 
 				// transactions
-				LinkedList<Transaction.Builder> txsList = blockHelper.getTxByAddress(address);
-				Map<String, Transaction.Builder> map = new HashMap<String, Transaction.Builder>();
-				if (txsList != null && !txsList.isEmpty()) {
-					for (Transaction.Builder tx : txsList) {
-						if(tx != null){
-							tx = blockHelper.getTxByTxHash(encApi.hexDec(tx.getTxHash()));
-							map.put(tx.getTxHash(), tx);//去重
-//							account.addTransactions(tx.build());
-						}
-					}
-				}
+				Map<String, Transaction> map = blockHelper.getTxByAddress(address);
 				
 				Iterator<String> it = map.keySet().iterator();
 				while(it.hasNext()){
 					String key = it.next();
 					account.addTransactions(map.get(key));
 				}
-
-				// tokenTransactions TODO
-				// txHelper.getTxByAddress(address);
-
-				// cryptoTokenTransactions TODO
-				// txHelper.getTxByAddress(address);
-
 			}
 		}
 

@@ -1,7 +1,9 @@
 package org.brewchain.browserAPI.tx;
 
 
-import java.util.LinkedList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.brewchain.browserAPI.Helper.BlockHelper;
@@ -10,7 +12,6 @@ import org.brewchain.browserAPI.gens.Tx.PTRSModule;
 import org.brewchain.browserAPI.gens.Tx.ReqGetTxByAddress;
 import org.brewchain.browserAPI.gens.Tx.ResGetTxByAddress;
 import org.brewchain.browserAPI.gens.Tx.Transaction;
-import org.fc.brewchain.bcapi.EncAPI;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -29,9 +30,6 @@ public class GetTxByAddress extends SessionModules<ReqGetTxByAddress>{
 	@ActorRequire(name = "blockHelper", scope = "global")
 	BlockHelper blockHelper;
 	
-	@ActorRequire(name = "bc_encoder", scope = "global")
-	EncAPI encApi;
-	
 	@Override
 	public String[] getCmds() {
 		return new String[] { PTRSCommand.GTA.name() };
@@ -49,11 +47,12 @@ public class GetTxByAddress extends SessionModules<ReqGetTxByAddress>{
 			ret.setRetCode(1);
 			
 			if(pb != null && StringUtils.isNotBlank(pb.getAddress())){
-				LinkedList<Transaction.Builder> txs = blockHelper.getTxByAddress(encApi.hexDec(pb.getAddress()));
-				if(txs != null && !txs.isEmpty()){
-					for(Transaction.Builder tx : txs){
-						ret.addTransactions(tx);
-					}
+				Map<String, Transaction> txs = blockHelper.getTxByAddress(pb.getAddress());
+				Set<String> keySet = txs.keySet();
+				Iterator<String> iterator = keySet.iterator();
+				while(iterator.hasNext()){
+					String txHash = iterator.next();
+					ret.addTransactions(txs.get(txHash));
 				}
 			}
 		} catch (Exception e){

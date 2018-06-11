@@ -4,11 +4,11 @@ package org.brewchain.browserAPI.test;
 import java.util.ArrayList;
 
 import org.apache.commons.lang3.StringUtils;
-import org.brewchain.account.gens.Act.AccountCryptoToken;
 import org.brewchain.browserAPI.gens.Lct.PLCTCommand;
 import org.brewchain.browserAPI.gens.Lct.PLCTModule;
 import org.brewchain.browserAPI.gens.Lct.ReqAdd;
 import org.brewchain.browserAPI.gens.Lct.RetAdd;
+import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -90,7 +90,7 @@ public class AddBalance extends SessionModules<ReqAdd>{
 			}else{
 				try {
 					oAccountHelper.addBalance(encApi.hexDec(pb.getAddress()), pb.getBalance());
-					org.brewchain.account.gens.Act.Account oAccount = oAccountHelper.GetAccount(encApi.hexDec(pb.getAddress()));
+					org.brewchain.evmapi.gens.Act.Account oAccount = oAccountHelper.GetAccount(encApi.hexDec(pb.getAddress()));
 					ret.setRetCode(1).setMsg("success").setBalance(oAccount.getValue().getBalance());
 				} catch (Exception e) {
 					ret.setRetCode(-1).setMsg("error : " + e.getMessage());

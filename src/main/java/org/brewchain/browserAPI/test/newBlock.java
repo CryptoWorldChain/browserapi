@@ -1,11 +1,11 @@
 package org.brewchain.browserAPI.test;
 
-import org.brewchain.account.gens.Block.BlockEntity;
 import org.brewchain.account.util.ByteUtil;
 import org.brewchain.browserAPI.gens.Lct.PLCTCommand;
 import org.brewchain.browserAPI.gens.Lct.PLCTModule;
 import org.brewchain.browserAPI.gens.Lct.ReqNbl;
 import org.brewchain.browserAPI.gens.Lct.RetNbl;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -29,8 +29,6 @@ public class newBlock extends SessionModules<ReqNbl> {
 
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-
-	private static int count = 0;
 
 	@Override
 	public String[] getCmds() {
@@ -58,12 +56,11 @@ public class newBlock extends SessionModules<ReqNbl> {
 		oSyncBlock.setHeader(newBlock.getHeader());
 		log.debug(String.format("==> 第 %s 块 hash %s 创建成功", oSyncBlock.getHeader().getNumber(), encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray())));
 		try {
-			oBlockHelper.ApplyBlock(oSyncBlock);
+			oBlockHelper.ApplyBlock(oSyncBlock.build());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		log.debug(String.format("==> 第 %s 块 hash %s 父hash %s 交易 %s 笔", oSyncBlock.getHeader().getNumber(), encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray()), encApi.hexEnc(oSyncBlock.getHeader().getParentHash().toByteArray()), oSyncBlock.getHeader().getTxHashsCount()));
-		count += 1;
 		ret.setBlockHash(encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray()));
 		ret.setRetCode(1);
 

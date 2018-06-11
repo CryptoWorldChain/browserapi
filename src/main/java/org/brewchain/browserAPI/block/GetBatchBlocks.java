@@ -52,12 +52,12 @@ public class GetBatchBlocks extends SessionModules<ReqGetBatchBlocks>{
 			}
 		}
 		
-		ret.setTotalCount(blockHelper.getLastStableBlockNumber());
+		ret.setTotalCount(blockHelper.getLastBlockNumber());
 		
-		List<BlockInfo.Builder> list = blockHelper.getBatchBlocks(pageNo, pageSize);
+		List<BlockInfo> list = blockHelper.getBatchBlocks(pageNo, pageSize);
 		
 		if(list != null && !list.isEmpty()){
-			for (BlockInfo.Builder block : list) {
+			for (BlockInfo block : list) {
 				ret.addBlocks(block);
 			}
 		}

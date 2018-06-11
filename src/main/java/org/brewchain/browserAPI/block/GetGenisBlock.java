@@ -1,13 +1,11 @@
 package org.brewchain.browserAPI.block;
 
-
-import org.apache.commons.lang3.StringUtils;
 import org.brewchain.browserAPI.Helper.BlockHelper;
 import org.brewchain.browserAPI.gens.Block.BlockInfo;
 import org.brewchain.browserAPI.gens.Block.PBLKCommand;
 import org.brewchain.browserAPI.gens.Block.PBLKTModule;
-import org.brewchain.browserAPI.gens.Block.ReqGetBlockByBlockHash;
-import org.brewchain.browserAPI.gens.Block.ResGetBlockByBlockHash;
+import org.brewchain.browserAPI.gens.Block.ReqGetGenisBlock;
+import org.brewchain.browserAPI.gens.Block.ResGetTheBestBlock;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -21,14 +19,14 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @NActorProvider
 @Slf4j
 @Data
-public class GetBlockByBlockHash extends SessionModules<ReqGetBlockByBlockHash>{
+public class GetGenisBlock extends SessionModules<ReqGetGenisBlock> {
 
 	@ActorRequire(name = "blockHelper", scope = "global")
 	BlockHelper blockHelper;
-	
+
 	@Override
 	public String[] getCmds() {
-		return new String[] { PBLKCommand.GHA.name() };
+		return new String[] { PBLKCommand.GGB.name() };
 	}
 
 	@Override
@@ -37,15 +35,15 @@ public class GetBlockByBlockHash extends SessionModules<ReqGetBlockByBlockHash>{
 	}
 
 	@Override
-	public void onPBPacket(final FramePacket pack, final ReqGetBlockByBlockHash pb, final CompleteHandler handler) {
-		ResGetBlockByBlockHash.Builder ret = ResGetBlockByBlockHash.newBuilder();
-		if(pb != null && StringUtils.isNotBlank(pb.getBlockHash())){
-			BlockInfo block = blockHelper.getBlockByBlockHash(pb.getBlockHash());
-			if(block != null)
-				ret.setBlock(block);
-			
-			ret.setRetCode(1);
+	public void onPBPacket(final FramePacket pack, final ReqGetGenisBlock pb, final CompleteHandler handler) {
+		ResGetTheBestBlock.Builder ret = ResGetTheBestBlock.newBuilder();
+		BlockInfo block = blockHelper.getGenisBlock();
+		if (block != null) {
+			ret.setBlock(block);
 		}
+		ret.setRetCode(1);
+
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));
 	}
+
 }
