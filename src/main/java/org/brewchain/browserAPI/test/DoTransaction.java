@@ -93,7 +93,6 @@ public class DoTransaction extends SessionModules<ReqDtx> {
 								ret.setTxHash(encApi.hexEnc(txHashByte.toByteArray()));
 								ret.setRetCode(1).setMsg("success");
 							} catch (Exception e) {
-								e.printStackTrace();
 								log.debug(String.format("=====> 执行 %s 交易异常 %s", count, e.getMessage()));
 							}
 						} else {
