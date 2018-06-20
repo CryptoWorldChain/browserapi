@@ -60,7 +60,7 @@ public class AddressHelper implements ActorService {
 	public AddressInfo.Builder getAccountDetailByAddress(String address) {
 		AddressInfo.Builder account = null;
 
-		Account oAccount = accountHelper.GetAccount(encApi.hexDec(address));
+		Account oAccount = accountHelper.GetAccount(address);
 		if (oAccount != null) {
 			account = AddressInfo.newBuilder();
 			AccountValue oAccountValue = oAccount.getValue();
@@ -73,8 +73,8 @@ public class AddressHelper implements ActorService {
 
 				// address
 				if (oAccountValue.getAddressList() != null && !oAccountValue.getAddressList().isEmpty()) {
-					for (ByteString str : oAccountValue.getAddressList()) {
-						account.addAddress(DataUtil.byteString2String(str, encApi));
+					for (String str : oAccountValue.getAddressList()) {
+						account.addAddress(str);
 					}
 				}
 
@@ -97,13 +97,13 @@ public class AddressHelper implements ActorService {
 						if (acts != null && !acts.isEmpty()) {
 							for (AccountCryptoToken act : acts) {
 								CryptoTokenValue.Builder ctv = CryptoTokenValue.newBuilder();
-								ctv.setHash(DataUtil.byteString2String(act.getHash(), encApi));
+								ctv.setHash(act.getHash());
 								ctv.setTimestamp(act.getTimestamp());
 								ctv.setIndex(act.getIndex());
 								ctv.setTotal(act.getTotal());
 								ctv.setCode(StringUtils.isNotBlank(act.getCode()) ? act.getCode() : "");
 								ctv.setName(StringUtils.isNotBlank(act.getName()) ? act.getName() : "");
-								ctv.setOwner(DataUtil.byteString2String(act.getOwner(), encApi));
+								ctv.setOwner(act.getOwner());
 								ctv.setNonce(act.getNonce());
 
 								cryptoToken.addTokens(ctv);

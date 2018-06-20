@@ -44,7 +44,7 @@ public class RegAddress extends SessionModules<ReqReg>{
 		
 		KeyPairs oKeyPairs = encApi.genKeys();
 		
-		oAccountHelper.CreateAccount(encApi.hexDec(oKeyPairs.getAddress()), encApi.hexDec(oKeyPairs.getPubkey()));
+		oAccountHelper.CreateAccount(oKeyPairs.getAddress());
 		
 		ret.setRetCode(1).setMsg("success");
 		ret.setAddress(oKeyPairs.getAddress());

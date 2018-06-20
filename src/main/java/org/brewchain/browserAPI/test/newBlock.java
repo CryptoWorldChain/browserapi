@@ -48,20 +48,20 @@ public class newBlock extends SessionModules<ReqNbl> {
 		BlockEntity.Builder newBlock = null;
 
 		try {
-			newBlock = oBlockHelper.CreateNewBlock(600, ByteUtil.EMPTY_BYTE_ARRAY, ByteString.copyFromUtf8("12345").toByteArray());
+			newBlock = oBlockHelper.CreateNewBlock(600, "");
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			log.debug("createNewBlock error : " + e1.getMessage());
 		}
 		oSyncBlock.setHeader(newBlock.getHeader());
-		log.debug(String.format("==> 第 %s 块 hash %s 创建成功", oSyncBlock.getHeader().getNumber(), encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray())));
+		log.debug(String.format("==> 第 %s 块 hash %s 创建成功", oSyncBlock.getHeader().getNumber(), oSyncBlock.getHeader().getBlockHash()));
 		try {
 			oBlockHelper.ApplyBlock(oSyncBlock.build());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		log.debug(String.format("==> 第 %s 块 hash %s 父hash %s 交易 %s 笔", oSyncBlock.getHeader().getNumber(), encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray()), encApi.hexEnc(oSyncBlock.getHeader().getParentHash().toByteArray()), oSyncBlock.getHeader().getTxHashsCount()));
-		ret.setBlockHash(encApi.hexEnc(oSyncBlock.getHeader().getBlockHash().toByteArray()));
+		log.debug(String.format("==> 第 %s 块 hash %s 父hash %s 交易 %s 笔", oSyncBlock.getHeader().getNumber(), oSyncBlock.getHeader().getBlockHash(), oSyncBlock.getHeader().getParentHash(), oSyncBlock.getHeader().getTxHashsCount()));
+		ret.setBlockHash(oSyncBlock.getHeader().getBlockHash());
 		ret.setRetCode(1);
 
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));

@@ -50,7 +50,7 @@ public class AddBalance extends SessionModules<ReqAdd>{
 			if(StringUtils.isNotBlank(pb.getToken())){
 				//erc20添加token
 				try {
-					oAccountHelper.addTokenBalance(encApi.hexDec(pb.getAddress()), pb.getToken(), pb.getBalance());
+					oAccountHelper.addTokenBalance(pb.getAddress(), pb.getToken(), pb.getBalance());
 					ret.setRetCode(1);
 				} catch (Exception e) {
 					ret.setRetCode(-1).setMsg(e.getMessage());
@@ -66,9 +66,9 @@ public class AddBalance extends SessionModules<ReqAdd>{
 						oAccountCryptoToken.setName("name" + i);
 						oAccountCryptoToken.setTimestamp(currentTime);
 						oAccountCryptoToken.setTotal(pb.getCount());
-						oAccountCryptoToken.setOwner(ByteString.copyFrom(encApi.hexDec(pb.getAddress())));
+						oAccountCryptoToken.setOwner(pb.getAddress());
 						oAccountCryptoToken.setNonce(0);
-						oAccountCryptoToken.setHash(ByteString.copyFrom(encApi.sha256Encode(oAccountCryptoToken.build().toByteArray())));
+						oAccountCryptoToken.setHash(encApi.hexEnc(encApi.sha256Encode(oAccountCryptoToken.build().toByteArray())));
 						tokensList.add(oAccountCryptoToken);
 					} catch (Exception e) {
 						System.out.println("第【"+i+"】条数据错误，错误原因："+e.getMessage());
@@ -79,7 +79,7 @@ public class AddBalance extends SessionModules<ReqAdd>{
 				log.debug("拼装数据个数:"+tokensList.size());
 				long doneCount = 0;
 				try {
-					doneCount = oAccountHelper.newCryptoBalances(encApi.hexDec(pb.getAddress()), pb.getSymbol(), tokensList);
+					doneCount = oAccountHelper.newCryptoBalances(pb.getAddress(), pb.getSymbol(), tokensList);
 				} catch (Exception e) {
 					ret.setRetCode(-1).setMsg("error : " + e.getMessage());
 				}
@@ -89,8 +89,8 @@ public class AddBalance extends SessionModules<ReqAdd>{
 				}
 			}else{
 				try {
-					oAccountHelper.addBalance(encApi.hexDec(pb.getAddress()), pb.getBalance());
-					org.brewchain.evmapi.gens.Act.Account oAccount = oAccountHelper.GetAccount(encApi.hexDec(pb.getAddress()));
+					oAccountHelper.addBalance(pb.getAddress(), pb.getBalance());
+					org.brewchain.evmapi.gens.Act.Account oAccount = oAccountHelper.GetAccount(pb.getAddress());
 					ret.setRetCode(1).setMsg("success").setBalance(oAccount.getValue().getBalance());
 				} catch (Exception e) {
 					ret.setRetCode(-1).setMsg("error : " + e.getMessage());
