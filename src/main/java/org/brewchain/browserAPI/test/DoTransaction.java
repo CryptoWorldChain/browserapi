@@ -1,6 +1,7 @@
 package org.brewchain.browserAPI.test;
 
 import org.apache.commons.lang3.StringUtils;
+import org.brewchain.account.enums.TransTypeEnum;
 import org.brewchain.browserAPI.gens.Lct.PLCTCommand;
 import org.brewchain.browserAPI.gens.Lct.PLCTModule;
 import org.brewchain.browserAPI.gens.Lct.ReqDtx;
@@ -64,14 +65,25 @@ public class DoTransaction extends SessionModules<ReqDtx> {
 								MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 								MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 								MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
+								MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 								oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getIntputAddr())));
 								oMultiTransactionInput4.setAmount(pb.getAmount());
 								oMultiTransactionInput4.setFee(0);
 								oMultiTransactionInput4.setFeeLimit(0);
 								oMultiTransactionInput4.setNonce(nonce);
+								if(StringUtils.isNotBlank(pb.getToken())){
+									oMultiTransactionInput4.setToken(pb.getToken());
+									oMultiTransactionBody.setType(TransTypeEnum.TYPE_TokenTransaction.value());
+								}
+								if(StringUtils.isNoneBlank(pb.getSymbol(), pb.getCryptoToken())){
+									oMultiTransactionBody.setType(TransTypeEnum.TYPE_CryptoTokenTransaction.value());
+									oMultiTransactionInput4.setSymbol(pb.getSymbol());
+									oMultiTransactionInput4.setCryptoToken(ByteString.copyFrom(encApi.hexDec(pb.getCryptoToken())));
+									oMultiTransactionOutput1.setSymbol(pb.getSymbol());
+									oMultiTransactionOutput1.setCryptoToken(ByteString.copyFrom(encApi.hexDec(pb.getCryptoToken())));
+								}
 								oMultiTransactionBody.addInputs(oMultiTransactionInput4);
 
-								MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
 								oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getOutputAddr())));
 								oMultiTransactionOutput1.setAmount(pb.getAmount());
 								oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);

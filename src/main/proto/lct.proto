@@ -48,6 +48,9 @@ message ReqDtx {
 	string intputPki = 3;//
 	string outputAddr = 4;//
 	int64 amount = 5;//
+	string token = 6;
+	string symbol = 7;
+	string cryptoToken = 8;
 }
 
 message RetDtx {
