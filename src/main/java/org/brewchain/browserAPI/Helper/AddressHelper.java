@@ -43,13 +43,13 @@ import onight.tfw.ntrans.api.annotation.ActorRequire;
 @Slf4j
 @Data
 public class AddressHelper implements ActorService {
-	
+
 	@ActorRequire(name = "Account_Helper", scope = "global")
 	org.brewchain.account.core.AccountHelper accountHelper;
-	
+
 	@ActorRequire(name = "bc_encoder", scope = "global")
 	EncAPI encApi;
-	
+
 	@ActorRequire(name = "blockHelper", scope = "global")
 	BlockHelper blockHelper;
 
@@ -57,7 +57,7 @@ public class AddressHelper implements ActorService {
 	 * @param address
 	 * @return
 	 */
-	public AddressInfo.Builder getAccountDetailByAddress(String address) {
+	public AddressInfo.Builder getAccountDetailByAddress(ByteString address) {
 		AddressInfo.Builder account = null;
 
 		Account oAccount = accountHelper.GetAccount(address);
@@ -73,8 +73,8 @@ public class AddressHelper implements ActorService {
 
 				// address
 				if (oAccountValue.getAddressList() != null && !oAccountValue.getAddressList().isEmpty()) {
-					for (String str : oAccountValue.getAddressList()) {
-						account.addAddress(str);
+					for (ByteString str : oAccountValue.getAddressList()) {
+						account.addAddress(encApi.hexEnc(str.toByteArray()));
 					}
 				}
 
@@ -97,13 +97,13 @@ public class AddressHelper implements ActorService {
 						if (acts != null && !acts.isEmpty()) {
 							for (AccountCryptoToken act : acts) {
 								CryptoTokenValue.Builder ctv = CryptoTokenValue.newBuilder();
-								ctv.setHash(act.getHash());
+								ctv.setHash(encApi.hexEnc(act.getHash().toByteArray()));
 								ctv.setTimestamp(act.getTimestamp());
 								ctv.setIndex(act.getIndex());
 								ctv.setTotal(act.getTotal());
-								ctv.setCode(StringUtils.isNotBlank(act.getCode()) ? act.getCode() : "");
-								ctv.setName(StringUtils.isNotBlank(act.getName()) ? act.getName() : "");
-								ctv.setOwner(act.getOwner());
+								ctv.setCode(act.getCode() == null ? encApi.hexEnc(act.getCode().toByteArray()) : "");
+								ctv.setName(act.getName() == null ? encApi.hexEnc(act.getName().toByteArray()) : "");
+								ctv.setOwner(encApi.hexEnc(act.getOwner().toByteArray()));
 								ctv.setNonce(act.getNonce());
 
 								cryptoToken.addTokens(ctv);
@@ -115,10 +115,10 @@ public class AddressHelper implements ActorService {
 
 				// transactions
 				Map<String, Transaction> map = blockHelper.getTxByAddress(address);
-				
+
 				Iterator<String> it = map.keySet().iterator();
 				List<Transaction> ts = new ArrayList<>();
-				while(it.hasNext()){
+				while (it.hasNext()) {
 					String key = it.next();
 					ts.add(map.get(key));
 				}
@@ -126,15 +126,15 @@ public class AddressHelper implements ActorService {
 
 					@Override
 					public int compare(Transaction o1, Transaction o2) {
-						if(o1.getTimeStamp() < o2.getTimeStamp()){
+						if (o1.getTimeStamp() < o2.getTimeStamp()) {
 							return 1;
-						} else if (o1.getTimeStamp() > o2.getTimeStamp()){
+						} else if (o1.getTimeStamp() > o2.getTimeStamp()) {
 							return -1;
 						}
 						return 0;
 					}
 				});
-				for(Transaction t : ts){
+				for (Transaction t : ts) {
 					account.addTransactions(t);
 				}
 			}

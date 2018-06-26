@@ -8,6 +8,8 @@ import org.brewchain.browserAPI.gens.Lct.RetReg;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.KeyPairs;
 
+import com.google.protobuf.ByteString;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import onight.oapi.scala.commons.SessionModules;
@@ -44,7 +46,7 @@ public class RegAddress extends SessionModules<ReqReg>{
 		
 		KeyPairs oKeyPairs = encApi.genKeys();
 		
-		oAccountHelper.CreateAccount(oKeyPairs.getAddress());
+		oAccountHelper.CreateAccount(ByteString.copyFrom(encApi.hexDec(oKeyPairs.getAddress())));
 		
 		ret.setRetCode(1).setMsg("success");
 		ret.setAddress(oKeyPairs.getAddress());

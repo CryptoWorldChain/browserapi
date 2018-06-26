@@ -8,6 +8,9 @@ import org.brewchain.browserAPI.gens.Address.PADRCommand;
 import org.brewchain.browserAPI.gens.Address.PADRModule;
 import org.brewchain.browserAPI.gens.Address.ReqGetAddrDetailByAddr;
 import org.brewchain.browserAPI.gens.Address.ResGetAddrDetailByAddr;
+import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.protobuf.ByteString;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +28,8 @@ public class GetAccountDetailByAddress extends SessionModules<ReqGetAddrDetailBy
 
 	@ActorRequire(name = "addressHelper", scope = "global")
 	AddressHelper addressHelper;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 	
 	@Override
 	public String[] getCmds() {
@@ -40,7 +45,7 @@ public class GetAccountDetailByAddress extends SessionModules<ReqGetAddrDetailBy
 	public void onPBPacket(final FramePacket pack, final ReqGetAddrDetailByAddr pb, final CompleteHandler handler) {
 		ResGetAddrDetailByAddr.Builder ret = ResGetAddrDetailByAddr.newBuilder();
 		if(pb != null && StringUtils.isNotBlank(pb.getAddress())){
-			AddressInfo.Builder addrInfo = addressHelper.getAccountDetailByAddress(pb.getAddress());
+			AddressInfo.Builder addrInfo = addressHelper.getAccountDetailByAddress(ByteString.copyFrom(encApi.hexDec(pb.getAddress())));
 			if(addrInfo != null)
 				ret.setAddress(addrInfo);
 			ret.setRetCode(1);

@@ -478,7 +478,7 @@ public class BlockHelper implements ActorService {
 	 * @param address
 	 * @return
 	 */
-	public Map<String, Transaction> getTxByAddress(String address) {
+	public Map<String, Transaction> getTxByAddress( ByteString address) {
 		List<BlockEntity> oBlockEntityList = null;
 		Map<String, Transaction> retMap = new HashMap<>();
 
@@ -582,15 +582,15 @@ public class BlockHelper implements ActorService {
 		String txStatus = mtx.getStatus();
 
 		// data
-		String data = mtBody.getData();
+		ByteString data = mtBody.getData();
 
 		// 委托代理
-		List<String> delegates = mtBody.getDelegateList();
+		List<ByteString> delegates = mtBody.getDelegateList();
 		List<String> delegateStrs = null;
 		if (delegates != null && !delegates.isEmpty()) {
 			delegateStrs = new LinkedList<String>();
-			for (String byteStr : delegates) {
-				delegateStrs.add(byteStr);
+			for (ByteString byteStr : delegates) {
+				delegateStrs.add(encApi.hexEnc(byteStr.toByteArray()));
 			}
 		}
 
@@ -601,12 +601,12 @@ public class BlockHelper implements ActorService {
 			froms = new LinkedList<TxInput.Builder>();
 			for (MultiTransactionInput mtxI : mtxInput) {
 				TxInput.Builder input = TxInput.newBuilder();
-				input.setAddress(mtxI.getAddress());
+				input.setAddress(encApi.hexEnc(mtxI.getAddress().toByteArray()));
 				input.setAmount(mtxI.getAmount());
-				input.setCryptoToken(mtxI.getCryptoToken());
+				input.setCryptoToken(encApi.hexEnc(mtxI.getCryptoToken().toByteArray()));
 				input.setFee(mtxI.getFee());
 				input.setNonce(mtxI.getNonce());
-				input.setPubKey(StringUtils.isNotBlank(mtxI.getPubKey()) ? mtxI.getPubKey() : "");
+				input.setPubKey(mtxI.getPubKey() == null ? encApi.hexEnc( mtxI.getPubKey().toByteArray()) : "");
 				input.setSymbol(StringUtils.isNotBlank(mtxI.getSymbol()) ? mtxI.getSymbol() : "");
 				input.setToken(StringUtils.isNotBlank(mtxI.getToken()) ? mtxI.getToken() : "");
 				froms.add(input);
@@ -619,9 +619,9 @@ public class BlockHelper implements ActorService {
 			tos = new LinkedList<TxOutput.Builder>();
 			for (MultiTransactionOutput mto : mtxOutput) {
 				TxOutput.Builder output = TxOutput.newBuilder();
-				output.setAddress(mto.getAddress());
+				output.setAddress(encApi.hexEnc(mto.getAddress().toByteArray()));
 				output.setAmount(mto.getAmount());
-				output.setCryptoToken(mto.getCryptoToken());
+				output.setCryptoToken(encApi.hexEnc(mto.getCryptoToken().toByteArray()));
 				output.setSymbol(StringUtils.isNotBlank(mto.getSymbol()) ? mto.getSymbol() : "");
 				tos.add(output);
 			}
@@ -647,7 +647,7 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 */
 	public Transaction getTransactionEntityByParams(String txHash, String txStatus, int blockHeight, long timeStamp,
-			List<TxInput.Builder> froms, List<TxOutput.Builder> tos, List<String> delegates, String data) {
+			List<TxInput.Builder> froms, List<TxOutput.Builder> tos, List<String> delegates, ByteString data) {
 		Transaction.Builder tx = Transaction.newBuilder();
 
 		tx.setTxHash(txHash);
@@ -683,7 +683,7 @@ public class BlockHelper implements ActorService {
 		}
 
 		if (data != null)
-			tx.setData(data);
+			tx.setData(encApi.hexEnc(data.toByteArray()));
 
 		return tx.build();
 	}

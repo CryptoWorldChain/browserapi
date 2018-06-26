@@ -12,6 +12,9 @@ import org.brewchain.browserAPI.gens.Tx.PTRSModule;
 import org.brewchain.browserAPI.gens.Tx.ReqGetTxByAddress;
 import org.brewchain.browserAPI.gens.Tx.ResGetTxByAddress;
 import org.brewchain.browserAPI.gens.Tx.Transaction;
+import org.fc.brewchain.bcapi.EncAPI;
+
+import com.google.protobuf.ByteString;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +32,8 @@ public class GetTxByAddress extends SessionModules<ReqGetTxByAddress>{
 
 	@ActorRequire(name = "blockHelper", scope = "global")
 	BlockHelper blockHelper;
+	@ActorRequire(name = "bc_encoder", scope = "global")
+	EncAPI encApi;
 	
 	@Override
 	public String[] getCmds() {
@@ -47,7 +52,7 @@ public class GetTxByAddress extends SessionModules<ReqGetTxByAddress>{
 			ret.setRetCode(1);
 			
 			if(pb != null && StringUtils.isNotBlank(pb.getAddress())){
-				Map<String, Transaction> txs = blockHelper.getTxByAddress(pb.getAddress());
+				Map<String, Transaction> txs = blockHelper.getTxByAddress(ByteString.copyFrom(encApi.hexDec(pb.getAddress())));
 				Set<String> keySet = txs.keySet();
 				Iterator<String> iterator = keySet.iterator();
 				while(iterator.hasNext()){

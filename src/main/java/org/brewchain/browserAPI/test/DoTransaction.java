@@ -60,13 +60,13 @@ public class DoTransaction extends SessionModules<ReqDtx> {
 						if (StringUtils.isNotBlank(pb.getOutputAddr())) {
 
 							try {
-								int nonce = oAccountHelper.getNonce(pb.getIntputAddr());
+								int nonce = oAccountHelper.getNonce(ByteString.copyFrom(encApi.hexDec(pb.getIntputAddr())));
 
 								MultiTransaction.Builder oMultiTransaction = MultiTransaction.newBuilder();
 								MultiTransactionBody.Builder oMultiTransactionBody = MultiTransactionBody.newBuilder();
 								MultiTransactionInput.Builder oMultiTransactionInput4 = MultiTransactionInput.newBuilder();
 								MultiTransactionOutput.Builder oMultiTransactionOutput1 = MultiTransactionOutput.newBuilder();
-								oMultiTransactionInput4.setAddress(pb.getIntputAddr());
+								oMultiTransactionInput4.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getIntputAddr())));
 								oMultiTransactionInput4.setAmount(pb.getAmount());
 								oMultiTransactionInput4.setFee(0);
 								oMultiTransactionInput4.setFeeLimit(0);
@@ -78,13 +78,13 @@ public class DoTransaction extends SessionModules<ReqDtx> {
 								if(StringUtils.isNoneBlank(pb.getSymbol(), pb.getCryptoToken())){
 									oMultiTransactionBody.setType(TransTypeEnum.TYPE_CryptoTokenTransaction.value());
 									oMultiTransactionInput4.setSymbol(pb.getSymbol());
-									oMultiTransactionInput4.setCryptoToken(pb.getCryptoToken());
+									oMultiTransactionInput4.setCryptoToken(ByteString.copyFrom(encApi.hexDec(pb.getCryptoToken())));
 									oMultiTransactionOutput1.setSymbol(pb.getSymbol());
-									oMultiTransactionOutput1.setCryptoToken(pb.getCryptoToken());
+									oMultiTransactionOutput1.setCryptoToken(ByteString.copyFrom(encApi.hexDec(pb.getCryptoToken())));
 								}
 								oMultiTransactionBody.addInputs(oMultiTransactionInput4);
 
-								oMultiTransactionOutput1.setAddress(pb.getOutputAddr());
+								oMultiTransactionOutput1.setAddress(ByteString.copyFrom(encApi.hexDec(pb.getOutputAddr())));
 								oMultiTransactionOutput1.setAmount(pb.getAmount());
 								oMultiTransactionBody.addOutputs(oMultiTransactionOutput1);
 
@@ -95,8 +95,8 @@ public class DoTransaction extends SessionModules<ReqDtx> {
 								oMultiTransactionBody.setTimestamp(System.currentTimeMillis());
 								// 签名
 								MultiTransactionSignature.Builder oMultiTransactionSignature21 = MultiTransactionSignature.newBuilder();
-								oMultiTransactionSignature21.setPubKey(pb.getIntputPuk());
-								oMultiTransactionSignature21.setSignature(encApi.hexEnc(encApi.ecSign(pb.getIntputPki(), oMultiTransactionBody.build().toByteArray())));
+								oMultiTransactionSignature21.setPubKey(ByteString.copyFrom(encApi.hexDec(pb.getIntputPuk())));
+								oMultiTransactionSignature21.setSignature(ByteString.copyFrom(encApi.ecSign(pb.getIntputPki(), oMultiTransactionBody.build().toByteArray())));
 								oMultiTransactionBody.addSignatures(oMultiTransactionSignature21);
 
 								oMultiTransaction.setTxBody(oMultiTransactionBody);
