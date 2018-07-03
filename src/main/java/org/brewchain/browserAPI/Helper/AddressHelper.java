@@ -84,6 +84,7 @@ public class AddressHelper implements ActorService {
 						Token.Builder token = Token.newBuilder();
 						token.setBalance(t.getBalance());
 						token.setToken(StringUtils.isNotBlank(t.getToken()) ? t.getToken() : "");
+						token.setLocked(t.getLocked());
 						account.addTokens(token);
 					}
 				}

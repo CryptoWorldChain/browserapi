@@ -37,6 +37,7 @@ message AddressInfo {
 message Token {
     string token = 1;
     int64 balance = 2;
+    int64 locked = 3;
 }
 
 message CryptoToken {
