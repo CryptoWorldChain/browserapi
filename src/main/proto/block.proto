@@ -42,7 +42,7 @@ message ReqGetBatchBlocks {
 message ResGetBatchBlocks {
 	int32 retCode = 1;
 	repeated BlockInfo blocks = 2;
-	int32 totalCount = 3;
+	int64 totalCount = 3;
 }
 
 message ReqGetBlockByBlockHash {
@@ -55,7 +55,7 @@ message ResGetBlockByBlockHash {
 }
 
 message ReqGetBlockByBlockHeight {
-	int32 blockHeight = 1;
+	int64 blockHeight = 1;
 }
 
 message ResGetBlockByBlockHeight {
@@ -82,7 +82,7 @@ message BlockHeader {
 	string coinbase = 2;
 	string txTrieRoot = 3;
 	int64 timestamp = 4;
-	int32 height = 5;//number
+	int64 height = 5;//number
 	string reward = 6;//为什么是 byte类型
 	string extraData = 7 [jstype = JS_NORMAL];
 	string nonce = 8;

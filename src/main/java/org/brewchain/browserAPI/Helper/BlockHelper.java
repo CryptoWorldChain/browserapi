@@ -23,6 +23,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransaction;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionBody;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
+import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.google.protobuf.ByteString;
@@ -87,7 +88,7 @@ public class BlockHelper implements ActorService {
 	 */
 	public org.brewchain.evmapi.gens.Block.BlockEntity.Builder getTheBestBlockEntity() {
 		org.brewchain.evmapi.gens.Block.BlockEntity oBlock = null;
-		int bestHeight = getLastBlockNumber();
+		long bestHeight = getLastBlockNumber();
 		try {
 			oBlock = oBlockChainHelper.getBlockByNumber(bestHeight);
 		} catch (Exception e) {
@@ -173,10 +174,10 @@ public class BlockHelper implements ActorService {
 			 * endBlockHash, int maxCount)
 			 */
 
-			int bestHeight = getLastBlockNumber();
-			int first = bestHeight - offset;
+			long bestHeight = getLastBlockNumber();
+			long first = bestHeight - offset;
 			if (first > 0) {
-				int end = first - pageSize + 1;
+				long end = first - pageSize + 1;
 				if (end < 0) {
 					end = 0;// 第0块
 				}
@@ -208,13 +209,13 @@ public class BlockHelper implements ActorService {
 	 * 
 	 * @return
 	 */
-	public int getLastBlockNumber() {
+	public long getLastBlockNumber() {
 		try {
 			if (STABLE_BLOCK) {
-				int bestHeight = oBlockChainHelper.getLastStableBlockNumber();
+				long bestHeight = oBlockChainHelper.getLastStableBlockNumber();
 				return bestHeight;
 			}
-			int bestHeight = oBlockChainHelper.getLastBlockNumber();
+			long bestHeight = oBlockChainHelper.getLastBlockNumber();
 			return bestHeight;
 		} catch (Exception e) {
 			log.error("get the last block number error" + e.getMessage());
@@ -268,7 +269,7 @@ public class BlockHelper implements ActorService {
 	 * @param blockHeight
 	 * @return
 	 */
-	public BlockInfo getBlockByBlockHeight(int blockHeight) {
+	public BlockInfo getBlockByBlockHeight(long blockHeight) {
 		BlockInfo block = null;
 		BlockEntity oBlock = null;
 		try {
@@ -287,7 +288,7 @@ public class BlockHelper implements ActorService {
 	 * @param blockHeight
 	 * @return
 	 */
-	public org.brewchain.evmapi.gens.Block.BlockEntity getBlockEntityByBlockHeight(int blockHeight) {
+	public org.brewchain.evmapi.gens.Block.BlockEntity getBlockEntityByBlockHeight(long blockHeight) {
 		org.brewchain.evmapi.gens.Block.BlockEntity blockEntity = null;
 		try {
 			blockEntity = oBlockChainHelper.getBlockByNumber(blockHeight);
@@ -329,7 +330,7 @@ public class BlockHelper implements ActorService {
 
 			BlockBody.Builder blockBody = BlockBody.newBuilder();
 			BlockHeader.Builder blockHeader = oBlockHeader2BlockHeader(blockEntity.getHeader());
-			int blockHeight = blockHeader.getHeight();
+			long blockHeight = blockHeader.getHeight();
 
 			List<String> list = blockEntity.getHeader().getTxHashsList();
 			List<Transaction> txList = new ArrayList<>();
@@ -498,7 +499,7 @@ public class BlockHelper implements ActorService {
 				for (; i < oBlockEntityList.size(); i++) {
 					List<MultiTransaction> txList = oBlockEntityList.get(i).getBody().getTxsList();
 					if (!txList.isEmpty()) {
-						int blockHeight = oBlockEntityList.get(i).getHeader().getNumber();
+						long blockHeight = oBlockEntityList.get(i).getHeader().getNumber();
 						for (MultiTransaction oMultiTransaction : oBlockEntityList.get(i).getBody().getTxsList()) {
 							String txHash = "";
 							Transaction tx = null;
@@ -545,8 +546,8 @@ public class BlockHelper implements ActorService {
 		return retMap;
 	}
 
-	public int getBlockHeightByTxHash(String txHash) {
-		int blockHeight = 0;
+	public long getBlockHeightByTxHash(String txHash) {
+		long blockHeight = 0;
 		BlockEntity oBlock = null;
 		try {
 			oBlock = oBlockHelper.getBlockByTransaction(encApi.hexDec(txHash));
@@ -569,7 +570,7 @@ public class BlockHelper implements ActorService {
 	public Transaction OTx2Tx(MultiTransaction mtx) {
 
 		// 获取区块的高度
-		int blockHeight = getBlockHeightByTxHash(mtx.getTxHash());
+		long blockHeight = getBlockHeightByTxHash(mtx.getTxHash());
 		// int blockHeight = 1;
 
 		// 交易内容
@@ -602,9 +603,9 @@ public class BlockHelper implements ActorService {
 			for (MultiTransactionInput mtxI : mtxInput) {
 				TxInput.Builder input = TxInput.newBuilder();
 				input.setAddress(encApi.hexEnc(mtxI.getAddress().toByteArray()));
-				input.setAmount(mtxI.getAmount());
+				input.setAmount(String.valueOf(ByteUtil.bytesToBigInteger(mtxI.getAmount().toByteArray())));
 				input.setCryptoToken(encApi.hexEnc(mtxI.getCryptoToken().toByteArray()));
-				input.setFee(mtxI.getFee());
+				input.setFee(0);
 				input.setNonce(mtxI.getNonce());
 				input.setPubKey(mtxI.getPubKey() == null ? encApi.hexEnc( mtxI.getPubKey().toByteArray()) : "");
 				input.setSymbol(StringUtils.isNotBlank(mtxI.getSymbol()) ? mtxI.getSymbol() : "");
@@ -620,7 +621,7 @@ public class BlockHelper implements ActorService {
 			for (MultiTransactionOutput mto : mtxOutput) {
 				TxOutput.Builder output = TxOutput.newBuilder();
 				output.setAddress(encApi.hexEnc(mto.getAddress().toByteArray()));
-				output.setAmount(mto.getAmount());
+				output.setAmount(String.valueOf(ByteUtil.bytesToBigInteger(mto.getAmount().toByteArray())));
 				output.setCryptoToken(encApi.hexEnc(mto.getCryptoToken().toByteArray()));
 				output.setSymbol(StringUtils.isNotBlank(mto.getSymbol()) ? mto.getSymbol() : "");
 				tos.add(output);
@@ -646,7 +647,7 @@ public class BlockHelper implements ActorService {
 	 * @param data
 	 * @return
 	 */
-	public Transaction getTransactionEntityByParams(String txHash, String txStatus, int blockHeight, long timeStamp,
+	public Transaction getTransactionEntityByParams(String txHash, String txStatus, long blockHeight, long timeStamp,
 			List<TxInput.Builder> froms, List<TxOutput.Builder> tos, List<String> delegates, ByteString data) {
 		Transaction.Builder tx = Transaction.newBuilder();
 

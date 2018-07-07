@@ -23,7 +23,7 @@ message ResGetAddrDetailByAddr {
 
 message AddressInfo {
     int32 nonce = 1;
-    int64 balance = 2;
+    string balance = 2;
     repeated string address = 3;
     repeated Token tokens = 4;
     repeated CryptoToken cryptoTokens = 5;
@@ -36,8 +36,8 @@ message AddressInfo {
 
 message Token {
     string token = 1;
-    int64 balance = 2;
-    int64 locked = 3;
+    string balance = 2;
+    string locked = 3;
 }
 
 message CryptoToken {

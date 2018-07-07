@@ -37,7 +37,7 @@ public class WsServer extends WebSocketServer {
 	
 	private final static long DELAY = 5 * 1000;
 	
-	public int BEST_HEIGHT = 0;
+	public long BEST_HEIGHT = 0;
 	public String AVG_BLOCK_TIME = "";
 	public String TPS = "";
 	public String NODES = "";
@@ -168,7 +168,7 @@ public class WsServer extends WebSocketServer {
 			}
 			bestBlock = blockHelper.getTheBestBlock();
 			if(bestBlock != null){
-				int height = bestBlock.getHeader().getHeight();
+				long height = bestBlock.getHeader().getHeight();
 				if(height > BEST_HEIGHT){
 					BEST_HEIGHT = height;
 					List<BlockInfo> list = blockHelper.getBatchBlocks(1, 10);

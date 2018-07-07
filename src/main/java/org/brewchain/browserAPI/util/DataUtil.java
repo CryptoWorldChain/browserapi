@@ -1,5 +1,6 @@
 package org.brewchain.browserAPI.util;
 
+import java.math.BigInteger;
 import java.text.DecimalFormat;
 
 import org.fc.brewchain.bcapi.EncAPI;
@@ -25,5 +26,9 @@ public class DataUtil {
 //		}
 
 		return target;
+	}
+	
+	public static BigInteger toNormal(BigInteger val) {
+		return val.divide(new BigInteger("1000000000000000000"));
 	}
 }

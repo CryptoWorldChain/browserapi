@@ -15,6 +15,7 @@ import org.brewchain.evmapi.gens.Act.AccountCryptoToken;
 import org.brewchain.evmapi.gens.Act.AccountCryptoValue;
 import org.brewchain.evmapi.gens.Act.AccountTokenValue;
 import org.brewchain.evmapi.gens.Act.AccountValue;
+import org.brewchain.rcvm.utils.ByteUtil;
 import org.brewchain.browserAPI.gens.Address.AddressInfo;
 import org.brewchain.browserAPI.gens.Address.CryptoToken;
 import org.brewchain.browserAPI.gens.Address.CryptoTokenValue;
@@ -69,7 +70,8 @@ public class AddressHelper implements ActorService {
 				account.setNonce(oAccountValue.getNonce());
 
 				// balance
-				account.setBalance(oAccountValue.getBalance());
+				account.setBalance(String.valueOf(
+						DataUtil.toNormal(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray()))));
 
 				// address
 				if (oAccountValue.getAddressList() != null && !oAccountValue.getAddressList().isEmpty()) {
@@ -82,9 +84,9 @@ public class AddressHelper implements ActorService {
 				if (oAccountValue.getTokensList() != null && !oAccountValue.getTokensList().isEmpty()) {
 					for (AccountTokenValue t : oAccountValue.getTokensList()) {
 						Token.Builder token = Token.newBuilder();
-						token.setBalance(t.getBalance());
+						token.setBalance(String.valueOf(ByteUtil.bytesToBigInteger(t.getBalance().toByteArray())));
 						token.setToken(StringUtils.isNotBlank(t.getToken()) ? t.getToken() : "");
-						token.setLocked(t.getLocked());
+						token.setLocked(String.valueOf(ByteUtil.bytesToBigInteger(t.getLocked().toByteArray())));
 						account.addTokens(token);
 					}
 				}
