@@ -14,9 +14,7 @@ import org.brewchain.browserAPI.gens.Block.BlockBody;
 import org.brewchain.browserAPI.gens.Block.BlockHeader;
 import org.brewchain.browserAPI.gens.Block.BlockInfo;
 import org.brewchain.browserAPI.gens.Block.BlockMiner;
-import org.brewchain.browserAPI.gens.Tx.Transaction;
-import org.brewchain.browserAPI.gens.Tx.TxInput;
-import org.brewchain.browserAPI.gens.Tx.TxOutput;
+import org.brewchain.browserAPI.gens.Tx.*;
 import org.brewchain.browserAPI.util.DataUtil;
 import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.brewchain.evmapi.gens.Tx.MultiTransaction;
@@ -25,6 +23,7 @@ import org.brewchain.evmapi.gens.Tx.MultiTransactionInput;
 import org.brewchain.evmapi.gens.Tx.MultiTransactionOutput;
 import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
@@ -396,7 +395,7 @@ public class BlockHelper implements ActorService {
 		BlockMiner.Builder miner = BlockMiner.newBuilder();
 		miner.setNode(StringUtils.isNotBlank(oBlockMiner.getNode()) ? oBlockMiner.getNode() : "");
 		miner.setAddress(StringUtils.isNotBlank(oBlockMiner.getAddress()) ? oBlockMiner.getAddress() : "");
-		miner.setReward(oBlockMiner.getReward());
+		miner.setReward(String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockMiner.getReward().toByteArray()))));
 		miner.setBcuid(StringUtils.isNotBlank(oBlockMiner.getBcuid()) ? oBlockMiner.getBcuid() : "");
 
 		return miner;
@@ -417,7 +416,6 @@ public class BlockHelper implements ActorService {
 			header.setTxTrieRoot(oBlockHeader.getTxTrieRoot() != null ? oBlockHeader.getTxTrieRoot() : "");
 			header.setTimestamp(oBlockHeader.getTimestamp());
 			header.setHeight(oBlockHeader.getNumber());
-			header.setReward(String.valueOf(oBlockHeader.getReward()));
 			// header.setNonce(oBlockHeader.getNonce() != null ?
 			// encApi.hexEnc(oBlockHeader.getNonce().toByteArray()) : "");
 			header.setSliceId(oBlockHeader.getSliceId());
@@ -479,7 +477,7 @@ public class BlockHelper implements ActorService {
 	 * @param address
 	 * @return
 	 */
-	public Map<String, Transaction> getTxByAddress( ByteString address) {
+	public Map<String, Transaction> getTxByAddress(ByteString address) {
 		List<BlockEntity> oBlockEntityList = null;
 		Map<String, Transaction> retMap = new HashMap<>();
 
@@ -603,11 +601,12 @@ public class BlockHelper implements ActorService {
 			for (MultiTransactionInput mtxI : mtxInput) {
 				TxInput.Builder input = TxInput.newBuilder();
 				input.setAddress(encApi.hexEnc(mtxI.getAddress().toByteArray()));
-				input.setAmount(String.valueOf(ByteUtil.bytesToBigInteger(mtxI.getAmount().toByteArray())));
+				input.setAmount(
+						String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(mtxI.getAmount().toByteArray()))));
 				input.setCryptoToken(encApi.hexEnc(mtxI.getCryptoToken().toByteArray()));
 				input.setFee(0);
 				input.setNonce(mtxI.getNonce());
-				input.setPubKey(mtxI.getPubKey() == null ? encApi.hexEnc( mtxI.getPubKey().toByteArray()) : "");
+				input.setPubKey(mtxI.getPubKey() == null ? encApi.hexEnc(mtxI.getPubKey().toByteArray()) : "");
 				input.setSymbol(StringUtils.isNotBlank(mtxI.getSymbol()) ? mtxI.getSymbol() : "");
 				input.setToken(StringUtils.isNotBlank(mtxI.getToken()) ? mtxI.getToken() : "");
 				froms.add(input);
@@ -621,7 +620,8 @@ public class BlockHelper implements ActorService {
 			for (MultiTransactionOutput mto : mtxOutput) {
 				TxOutput.Builder output = TxOutput.newBuilder();
 				output.setAddress(encApi.hexEnc(mto.getAddress().toByteArray()));
-				output.setAmount(String.valueOf(ByteUtil.bytesToBigInteger(mto.getAmount().toByteArray())));
+				output.setAmount(
+						String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(mto.getAmount().toByteArray()))));
 				output.setCryptoToken(encApi.hexEnc(mto.getCryptoToken().toByteArray()));
 				output.setSymbol(StringUtils.isNotBlank(mto.getSymbol()) ? mto.getSymbol() : "");
 				tos.add(output);

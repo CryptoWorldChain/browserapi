@@ -23,6 +23,7 @@ import org.brewchain.browserAPI.gens.Address.Token;
 import org.brewchain.browserAPI.gens.Tx.Transaction;
 import org.brewchain.browserAPI.util.DataUtil;
 import org.fc.brewchain.bcapi.EncAPI;
+import org.fc.brewchain.bcapi.UnitUtil;
 
 import com.google.protobuf.ByteString;
 
@@ -71,7 +72,7 @@ public class AddressHelper implements ActorService {
 
 				// balance
 				account.setBalance(String.valueOf(
-						DataUtil.toNormal(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray()))));
+						UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oAccountValue.getBalance().toByteArray()))));
 
 				// address
 				if (oAccountValue.getAddressList() != null && !oAccountValue.getAddressList().isEmpty()) {
@@ -84,9 +85,11 @@ public class AddressHelper implements ActorService {
 				if (oAccountValue.getTokensList() != null && !oAccountValue.getTokensList().isEmpty()) {
 					for (AccountTokenValue t : oAccountValue.getTokensList()) {
 						Token.Builder token = Token.newBuilder();
-						token.setBalance(String.valueOf(DataUtil.toNormal(ByteUtil.bytesToBigInteger(t.getBalance().toByteArray()))));
+						token.setBalance(String
+								.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(t.getBalance().toByteArray()))));
 						token.setToken(StringUtils.isNotBlank(t.getToken()) ? t.getToken() : "");
-						token.setLocked(String.valueOf(DataUtil.toNormal(ByteUtil.bytesToBigInteger(t.getLocked().toByteArray()))));
+						token.setLocked(String
+								.valueOf(DataUtil.toNormal(ByteUtil.bytesToBigInteger(t.getLocked().toByteArray()))));
 						account.addTokens(token);
 					}
 				}

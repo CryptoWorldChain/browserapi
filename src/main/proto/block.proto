@@ -83,7 +83,6 @@ message BlockHeader {
 	string txTrieRoot = 3;
 	int64 timestamp = 4;
 	int64 height = 5;//number
-	string reward = 6;//为什么是 byte类型
 	string extraData = 7 [jstype = JS_NORMAL];
 	string nonce = 8;
 	string blockHash = 9;
@@ -101,7 +100,7 @@ message BlockBody {
 
 message BlockMiner {
 	string node = 1;
-	int32 reward = 3;
+	string reward = 3;
 	string address = 4;
 	string bcuid = 5;
 }
