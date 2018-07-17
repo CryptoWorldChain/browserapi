@@ -606,7 +606,6 @@ public class BlockHelper implements ActorService {
 				input.setCryptoToken(encApi.hexEnc(mtxI.getCryptoToken().toByteArray()));
 				input.setFee(0);
 				input.setNonce(mtxI.getNonce());
-				input.setPubKey(mtxI.getPubKey() == null ? encApi.hexEnc(mtxI.getPubKey().toByteArray()) : "");
 				input.setSymbol(StringUtils.isNotBlank(mtxI.getSymbol()) ? mtxI.getSymbol() : "");
 				input.setToken(StringUtils.isNotBlank(mtxI.getToken()) ? mtxI.getToken() : "");
 				froms.add(input);
