@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -22,11 +24,15 @@ import org.brewchain.browserAPI.gens.Block.BlockInfo;
 import org.brewchain.browserAPI.gens.Tx.Transaction;
 import org.brewchain.browserAPI.util.CallHelper;
 import org.brewchain.browserAPI.util.DataUtil;
+import org.brewchain.evmapi.gens.Block.BlockEntity;
 import org.fc.brewchain.bcapi.EncAPI;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import lombok.Data;
 import lombok.val;
@@ -66,9 +72,9 @@ public class AdditionalHelper implements ActorService {
 
 	private static String QUERY_TX = "http://128.14.133.222:9200/transaction/_search";
 	private static String QUERY_NODE = "http://128.14.133.226:30800/fbs/pzp/pbinf.do";// 30802
-	
-	 static {
-		QUERY_TX = props.get("query_tx", "http://128.14.133.222:9200/transaction/_search"); 
+
+	static {
+		QUERY_TX = props.get("query_tx", "http://128.14.133.222:9200/transaction/_search");
 		QUERY_NODE = props.get("query_node", "http://128.14.133.226:30800/fbs/pzp/pbinf.do");
 		log.debug("init query tx and node url successful");
 		log.debug("query_tx is : " + QUERY_TX);
@@ -88,123 +94,137 @@ public class AdditionalHelper implements ActorService {
 	private final static long DAY = HOUR * 24;
 
 	private final static long WEEK = DAY * 7;
-	
-	private final static String PENDING = "PENDING";//	待连节点状态
+
+	private final static String PENDING = "PENDING";// 待连节点状态
 	private final static String DIRECT = "DIRECT";// 直连节点状态
-	
+
 	private final static String NID_RAFT = "raft";
 	private final static String NID_DPOS = "dpos";
+
+	protected final LoadingCache<String, ResGetAdditional.Builder> additionals = CacheBuilder.newBuilder()
+			.maximumSize(1000)
+			.expireAfterWrite(6, TimeUnit.SECONDS)
+			.build(new CacheLoader<String, ResGetAdditional.Builder>() {
+				public ResGetAdditional.Builder load(String key) {
+					return null;
+				}
+			});
 
 	/**
 	 * @return
 	 */
 	public ResGetAdditional.Builder getAdditional() {
-		ResGetAdditional.Builder ret = ResGetAdditional.newBuilder();
 
+		ResGetAdditional.Builder ret = ResGetAdditional.newBuilder();
+		if (additionals.getIfPresent("additionals") != null) {
+			try {
+				return additionals.get("additionals");
+			} catch (ExecutionException e) {
+			}
+		}
 		List<Node> dposList = getDposNode();
-		
-		//确定不同状态的节点总数
+
+		// 确定不同状态的节点总数
 		int pendingCount = 0;
 		int directCount = 0;
 		int allCount = 0;
 		pendingCount += getPendingCount(dposList);
 		directCount += getDirectCount(dposList);
-		
-		//两种状态确定节点总数
+
+		// 两种状态确定节点总数
 		allCount = pendingCount + directCount;
-		
+
 		ret.setNodes(allCount + "");
 		ret.setPNodes(pendingCount + "");
 		ret.setDNodes(directCount + "");
-		
-		List<Long> blockTimeList = new ArrayList<Long>(); 
+
+		List<Long> blockTimeList = new ArrayList<Long>();
 		List<Long> txTimeList = new ArrayList<Long>();
+
 		List<BlockInfo> blockList = blockHelper.getBatchBlocks(1, 5);
-		
+
 		int txCount = 0;
 		long confirmTimeSum = 0l;
 		log.debug("debug for blockList : " + blockList == null ? " blockList is null" : "blockList is not null");
-		if(blockList != null && !blockList.isEmpty()){
-			for(BlockInfo block : blockList){
-				if(block.getHeader() != null && block.getHeader().getTimestamp() > 0l){
+		if (blockList != null && !blockList.isEmpty()) {
+			for (BlockInfo block : blockList) {
+				if (block.getHeader() != null && block.getHeader().getTimestamp() > 0l) {
 					long blockTime = block.getHeader().getTimestamp();
-					if(blockTime > 0){
+					txTimeList.add(blockTime);
+					txCount += block.getHeader().getTxHashsCount();
+
+					if (blockTime > 0) {
 						blockTimeList.add(blockTime);
-						if(block.getBody() != null && !block.getBody().getTransactionsList().isEmpty()){
-							List<Transaction> txList = block.getBody().getTransactionsList();
-							for(Transaction tx : txList){
-								if(tx.getTimeStamp() > 0){
-									txTimeList.add(tx.getTimeStamp());
-									 confirmTimeSum += (blockTime - tx.getTimeStamp());
-								}
-							}
-							txCount += txList.size();
-						}
 					}
 				}
 			}
 		}
-		
+
 		double aveBlockTime = 0d;
-		if(blockTimeList.size() > 2){
-			//排序
+		if (blockTimeList.size() > 2) {
+			// 排序
 			Collections.sort(blockTimeList);
 			long allBlockTime = 0l;
-			for(int i = 1; i < blockTimeList.size(); i++){
+			for (int i = 1; i < blockTimeList.size(); i++) {
 				allBlockTime += (blockTimeList.get(i) - blockTimeList.get(i - 1));
 			}
-			aveBlockTime = (double)allBlockTime / (blockTimeList.size() - 1);
+			aveBlockTime = (double) allBlockTime / (blockTimeList.size() - 1);
 			aveBlockTime /= THOUSAND;
 		}
-		
+
 		double aveTxTime = 0d;
-		if(txTimeList.size() > 2){
-			//排序
+		if (txTimeList.size() > 2) {
+			// 排序
 			Collections.sort(txTimeList);
-			aveTxTime = (double)(txTimeList.get(txTimeList.size() - 1) - txTimeList.get(0)) / txTimeList.size();
-			aveTxTime /= THOUSAND;
+			aveTxTime = (double) txCount / ((txTimeList.get(txTimeList.size() - 1) - txTimeList.get(0)) / 1000);
+			// aveTxTime /= THOUSAND;
+
+			log.debug("aveTxTime=" + aveTxTime + " txCount=" + txCount + " txTimeList=" + txTimeList.size() + " dur="
+					+ (txTimeList.get(txTimeList.size() - 1) - txTimeList.get(0)));
 		}
-		
+
 		double confirm = 0d;
-		if(confirmTimeSum > 0 && txCount > 0){
-			confirmTimeSum /= THOUSAND;//毫秒变秒
-			confirm = (double)confirmTimeSum / txCount;
+		if (confirmTimeSum > 0 && txCount > 0) {
+			confirmTimeSum /= THOUSAND;// 毫秒变秒
+			confirm = (double) confirmTimeSum / txCount;
 		}
-		
+
 		ret.setAvgBlockTime(DataUtil.formateStr(aveBlockTime + ""));
 		ret.setTps(DataUtil.formateStr(aveTxTime + ""));
 		ret.setConfirm(DataUtil.formateStr(confirm + ""));
-		
+
+		additionals.put("additionals", ret);
 		return ret;
 	}
-	
+
 	/**
 	 * 获取节点列表中 pending 状态的节点个数
+	 * 
 	 * @param nodeList
 	 * @return
 	 */
-	public synchronized int getPendingCount(List<Node> nodeList){
+	public synchronized int getPendingCount(List<Node> nodeList) {
 		return getNodeCountByStatus(nodeList, PENDING);
 	}
-	
+
 	/**
 	 * @param nodeList
 	 * @return
 	 */
-	public int getDirectCount(List<Node> nodeList){
+	public int getDirectCount(List<Node> nodeList) {
 		return getNodeCountByStatus(nodeList, DIRECT);
 	}
-	
+
 	/**
 	 * @param nodeList
 	 * @param status
 	 * @return
 	 */
-	public int getNodeCountByStatus(List<Node> nodeList, String status){
+	public int getNodeCountByStatus(List<Node> nodeList, String status) {
 		int count = 0;
-		if(nodeList != null && !nodeList.isEmpty()){
-			for(Node node : nodeList){
-				if(StringUtils.isNotBlank(node.getStatus()) && node.getStatus().equals(status)){
+		if (nodeList != null && !nodeList.isEmpty()) {
+			for (Node node : nodeList) {
+				if (StringUtils.isNotBlank(node.getStatus()) && node.getStatus().equals(status)) {
 					count += 1;
 				}
 			}
@@ -253,8 +273,8 @@ public class AdditionalHelper implements ActorService {
 				JsonNode jsonObject = mapper.readTree(nodeRet.getBody());
 
 				if (jsonObject != null) {
-					
-					//相应的要添加节点的类型（raft、dpos）和节点的状态（pending、direct）
+
+					// 相应的要添加节点的类型（raft、dpos）和节点的状态（pending、direct）
 					if (jsonObject.has("dnodes")) {
 						ArrayNode a = (ArrayNode) jsonObject.get("dnodes");
 						for (JsonNode jn : a) {
@@ -278,28 +298,29 @@ public class AdditionalHelper implements ActorService {
 
 		return list;
 	}
+
 	public List<Node> getNodesBase2(String nodeType) {
 		ObjectMapper mapper = new ObjectMapper();
 		Map<String, Object> reqParam = new HashMap<String, Object>();
 		reqParam.put("nid", nodeType);
 		FramePacket fp = PacketHelper.buildUrlFromJson(JsonSerializer.formatToString(reqParam), "POST", QUERY_NODE);
-		
+
 		List<Node> list = new LinkedList<Node>();
 		try {
 			val nodeRet = sender.send(fp, 3000);
 			if (nodeRet.getBody() != null && nodeRet.getBody().length > 0) {
 				JsonNode jsonObject = mapper.readTree(nodeRet.getBody());
-				
+
 				if (jsonObject != null) {
-					
-					//相应的要添加节点的类型（raft、dpos）和节点的状态（pending、direct）
+
+					// 相应的要添加节点的类型（raft、dpos）和节点的状态（pending、direct）
 					if (jsonObject.has("dnodes")) {
 						ArrayNode a = (ArrayNode) jsonObject.get("dnodes");
 						for (JsonNode jn : a) {
 							list.add(getNodeInfo(jn, nodeType, DIRECT));
 						}
 					}
-					
+
 					if (jsonObject.has("pnodes")) {
 						ArrayNode a = (ArrayNode) jsonObject.get("pnodes");
 						for (JsonNode jn : a) {
@@ -313,7 +334,7 @@ public class AdditionalHelper implements ActorService {
 		} catch (IOException e) {
 			log.error(String.format("get node info error : %s", e.getMessage()));
 		}
-		
+
 		return list;
 	}
 
@@ -365,7 +386,7 @@ public class AdditionalHelper implements ActorService {
 			block_cc = jn.get("block_cc").asLong();
 			node.setBlockCc(block_cc);
 		}
-		
+
 		node.setStatus(status);
 		node.setType(type);
 
@@ -386,28 +407,28 @@ public class AdditionalHelper implements ActorService {
 			int[] a = searchTxBetweenRange(gt, lt, DELAYS[i]);
 			switch (DELAYS[i]) {
 			case "1w":
-				for(int j : a){
+				for (int j : a) {
 					Count.Builder count = Count.newBuilder();
 					count.setValue(j);
 					ret.addWeek(count);
 				}
 				break;
 			case "1d":
-				for(int j : a){
+				for (int j : a) {
 					Count.Builder count = Count.newBuilder();
 					count.setValue(j);
 					ret.addDay(count);
 				}
 				break;
 			case "1h":
-				for(int j : a){
+				for (int j : a) {
 					Count.Builder count = Count.newBuilder();
 					count.setValue(j);
 					ret.addHour(count);
 				}
 				break;
 			case "10m":
-				for(int j : a){
+				for (int j : a) {
 					Count.Builder count = Count.newBuilder();
 					count.setValue(j);
 					ret.addTen(count);
@@ -488,37 +509,17 @@ public class AdditionalHelper implements ActorService {
 	 */
 	public synchronized int[] searchTxBetweenRange(long gt, long lt, String delay) {
 		ObjectMapper mapper = new ObjectMapper();
-		String str = "{\"query\" :" +
-                "{\"constant_score\" : " +
-                        "{\"filter\" : " +
-                            "{\"range\" : " +
-                                    "{ \"@timestamp\" : " +
-                                            "{" +
-                                                "\"gte\" : " + gt + "," +
-                                                "\"lte\" : " + lt +
-                                            "}" +
-                                    "}" +
-                            "}" +
-                        "}" +
-                "}," +
-                "\"aggs\" : " +
-                "{" +
-                    "\"by_time\" : " +
-                    "{\"date_histogram\" : " +
-                        "{" +
-                            "\"field\" : \"@timestamp\"," +
-                            "\"interval\" : \"" + delay + "\"" +
-                        "}" +
-                    "}" +
-                "}" +
-            "}";
-		
+		String str = "{\"query\" :" + "{\"constant_score\" : " + "{\"filter\" : " + "{\"range\" : "
+				+ "{ \"@timestamp\" : " + "{" + "\"gte\" : " + gt + "," + "\"lte\" : " + lt + "}" + "}" + "}" + "}"
+				+ "}," + "\"aggs\" : " + "{" + "\"by_time\" : " + "{\"date_histogram\" : " + "{"
+				+ "\"field\" : \"@timestamp\"," + "\"interval\" : \"" + delay + "\"" + "}" + "}" + "}" + "}";
+
 		log.debug("request txCount between " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSSS").format(new Date(gt))
 				+ " and" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSSS").format(new Date(lt)));
 		String ret = CallHelper.remoteCallPost(QUERY_TX, str);
 		JsonNode jn = null;
 		try {
-			if(ret != null)
+			if (ret != null)
 				jn = mapper.readTree(ret);
 		} catch (IOException e) {
 			log.error("parse string 2 json error while geting recent transactions ");
@@ -527,7 +528,8 @@ public class AdditionalHelper implements ActorService {
 		List<Long> timeList = new LinkedList<Long>();
 		Map<Long, Integer> m = new HashMap<Long, Integer>();
 
-		if (jn != null && jn.has("aggregations") && jn.get("aggregations").has("by_time") && jn.get("aggregations").get("by_time").has("buckets")) {
+		if (jn != null && jn.has("aggregations") && jn.get("aggregations").has("by_time")
+				&& jn.get("aggregations").get("by_time").has("buckets")) {
 			ArrayNode nodes = (ArrayNode) jn.get("aggregations").get("by_time").get("buckets");
 			for (JsonNode node : nodes) {
 				long key = 0l;
@@ -548,7 +550,7 @@ public class AdditionalHelper implements ActorService {
 			}
 		}
 
-		Collections.sort(timeList, new CompareLongDes());//倒序排序
+		Collections.sort(timeList, new CompareLongDes());// 倒序排序
 		int[] a = getFullyCounts(timeList, m, gt, lt, delay);
 
 		return a;
@@ -561,10 +563,10 @@ public class AdditionalHelper implements ActorService {
 	public int[] getFullyCounts(List<Long> timeList, Map<Long, Integer> countMap, long gt, long lt, String delay) {
 		int[] a = new int[GROUP_COUNT];
 		if (timeList != null && !timeList.isEmpty()) {
-			long firstTime = timeList.get(0);//需要time按照倒序排序，5:20、5:10、5:00
+			long firstTime = timeList.get(0);// 需要time按照倒序排序，5:20、5:10、5:00
 			long startTime = getStartTime(firstTime, lt, delay);
-			for(int i = GROUP_COUNT; i > 0; i--){
-				if(countMap.get(startTime) != null){
+			for (int i = GROUP_COUNT; i > 0; i--) {
+				if (countMap.get(startTime) != null) {
 					a[i] = countMap.get(startTime);
 				}
 				startTime = startTime - getDiff(delay);
@@ -592,12 +594,12 @@ public class AdditionalHelper implements ActorService {
 		}
 		return startTime;
 	}
-	
+
 	/**
 	 * @param delay
 	 * @return
 	 */
-	public long getDiff(String delay){
+	public long getDiff(String delay) {
 		long diff = 0l;
 		switch (delay) {
 		case "1w":
@@ -615,7 +617,7 @@ public class AdditionalHelper implements ActorService {
 		default:
 			break;
 		}
-		
+
 		return diff;
 	}
 
@@ -623,24 +625,25 @@ public class AdditionalHelper implements ActorService {
 
 /**
  * 倒序排序
+ * 
  * @author jack
  *
  * @param <Long>
  */
 class CompareLongDes implements Comparator<java.lang.Long> {
 
-    public int compare(java.lang.Long o1, java.lang.Long o2) {
+	public int compare(java.lang.Long o1, java.lang.Long o2) {
 
-    	Integer i = new Integer(1);
-    	i.intValue();
-    	
-        long l1 = o1;
-        long l2 = o2;
-        if(l1 < l2){
-            return 1;
-        }else{
-            return -1;
-        }
+		Integer i = new Integer(1);
+		i.intValue();
 
-    }
+		long l1 = o1;
+		long l2 = o2;
+		if (l1 < l2) {
+			return 1;
+		} else {
+			return -1;
+		}
+
+	}
 }

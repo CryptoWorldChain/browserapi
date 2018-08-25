@@ -1,6 +1,5 @@
 package org.brewchain.browserAPI.block;
 
-
 import java.util.List;
 
 import org.brewchain.browserAPI.Helper.BlockHelper;
@@ -22,11 +21,11 @@ import onight.tfw.otransio.api.beans.FramePacket;
 @NActorProvider
 @Slf4j
 @Data
-public class GetBatchBlocks extends SessionModules<ReqGetBatchBlocks>{
+public class GetBatchBlocks extends SessionModules<ReqGetBatchBlocks> {
 
 	@ActorRequire(name = "blockHelper", scope = "global")
 	BlockHelper blockHelper;
-	
+
 	@Override
 	public String[] getCmds() {
 		return new String[] { PBLKCommand.GBB.name() };
@@ -40,30 +39,29 @@ public class GetBatchBlocks extends SessionModules<ReqGetBatchBlocks>{
 	@Override
 	public void onPBPacket(final FramePacket pack, final ReqGetBatchBlocks pb, final CompleteHandler handler) {
 		ResGetBatchBlocks.Builder ret = ResGetBatchBlocks.newBuilder();
-		//默认参数
+		// 默认参数
 		int pageNo = 1;
 		int pageSize = 10;// 暂定 10 行
-		if(pb != null){
-			if(pb.getPageNo() > 0){
+		if (pb != null) {
+			if (pb.getPageNo() > 0) {
 				pageNo = pb.getPageNo();
 			}
-			if(pb.getPageSize() > 0){
+			if (pb.getPageSize() > 0) {
 				pageSize = pb.getPageSize();
 			}
 		}
-		
+
 		ret.setTotalCount(blockHelper.getLastBlockNumber());
-		
+
 		List<BlockInfo> list = blockHelper.getBatchBlocks(pageNo, pageSize);
-		
-		if(list != null && !list.isEmpty()){
+
+		if (list != null && !list.isEmpty()) {
 			for (BlockInfo block : list) {
-				ret.addBlocks(block);
+				ret.addBlocks(block.toBuilder().setHeader(block.getHeader().toBuilder().clearTxHashs()).build());
 			}
 		}
-		
+
 		ret.setRetCode(1);
-		
 		handler.onFinished(PacketHelper.toPBReturn(pack, ret.build()));
 	}
 }

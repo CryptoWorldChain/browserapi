@@ -10,6 +10,8 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+import org.brewchain.account.core.KeyConstant;
+import org.brewchain.bcapi.gens.Oentity.OPair;
 import org.brewchain.browserAPI.gens.Block.BlockBody;
 import org.brewchain.browserAPI.gens.Block.BlockHeader;
 import org.brewchain.browserAPI.gens.Block.BlockInfo;
@@ -25,6 +27,9 @@ import org.brewchain.rcvm.utils.ByteUtil;
 import org.fc.brewchain.bcapi.EncAPI;
 import org.fc.brewchain.bcapi.UnitUtil;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.protobuf.ByteString;
 
 import lombok.Data;
@@ -59,6 +64,19 @@ public class BlockHelper implements ActorService {
 	EncAPI encApi;
 
 	private final static boolean STABLE_BLOCK = false;
+
+	protected final LoadingCache<Long, BlockEntity> blocks = CacheBuilder.newBuilder().maximumSize(1000)
+			.build(new CacheLoader<Long, BlockEntity>() {
+				public BlockEntity load(Long key) {
+					try {
+						BlockEntity block = oBlockChainHelper.getBlockByNumber(key);
+						return block;
+					} catch (Exception e) {
+						log.error("cannot get block");
+					}
+					return null;
+				}
+			});
 
 	/**
 	 * 获取最新的 block
@@ -159,42 +177,21 @@ public class BlockHelper implements ActorService {
 	 * @return
 	 */
 	public List<BlockInfo> getBatchBlocks(int pageNo, int pageSize) {
-		List<BlockInfo> retList = null;
-		int offset = pageSize * (pageNo - 1);
+		List<BlockInfo> retList = new ArrayList<>();
 		try {
-			/*
-			 * 思路 1、根据 pageNo、 pageSize 获取 页首、页尾 1.1、通过
-			 * oBlockChainHelper.getLastBlockNumber() 得到最高区块，倒序，通过 offset 得到页首 1.2、通过
-			 * pageSize 和页首获取 页尾
-			 * 
-			 * 2、获取页首页尾两个 block 的height oBlockChainHelper.getBlockByNumber(int number);
-			 * 
-			 * 3、再获取到一组 block oBlockChainHelper.getBlocks(byte[] blockHash, byte[]
-			 * endBlockHash, int maxCount)
-			 */
-
 			long bestHeight = getLastBlockNumber();
-			long first = bestHeight - offset;
-			if (first > 0) {
-				long end = first - pageSize + 1;
-				if (end < 0) {
-					end = 0;// 第0块
-				}
-				BlockEntity startBlock = oBlockChainHelper.getBlockByNumber(first);
-				BlockEntity endBlock = oBlockChainHelper.getBlockByNumber(end);
 
-				if (startBlock != null && endBlock != null) {
-					LinkedList<BlockEntity> list = getParentsBlocks(startBlock.getHeader().getBlockHash(),
-							endBlock.getHeader().getBlockHash(), pageSize);
-					if (list != null && !list.isEmpty()) {
-						retList = new LinkedList<BlockInfo>();
-						for (BlockEntity blockEntity : list) {
-							BlockInfo block = oBlock2BlockInfo(blockEntity);
-							if (block != null)
-								retList.add(block);
-						}
-					}
+			int i = pageSize;
+			while (i >= 0) {
+				long number = bestHeight - pageSize + i;
+				BlockEntity block = blocks.getIfPresent(number);
+				if (block == null) {
+					block = oBlockChainHelper.getBlockByNumber(number);
 				}
+				if (block != null) {
+					retList.add(oBlock2BlockInfo(block));
+				}
+				i--;
 			}
 		} catch (Exception e) {
 			log.error("get batch blocks error" + e.getMessage());
@@ -327,7 +324,7 @@ public class BlockHelper implements ActorService {
 		if (blockEntity != null) {
 			block = BlockInfo.newBuilder();
 
-			BlockBody.Builder blockBody = BlockBody.newBuilder();
+			// BlockBody.Builder blockBody = BlockBody.newBuilder();
 			BlockHeader.Builder blockHeader = oBlockHeader2BlockHeader(blockEntity.getHeader());
 			long blockHeight = blockHeader.getHeight();
 
@@ -337,7 +334,7 @@ public class BlockHelper implements ActorService {
 				for (String string : list) {
 					Transaction tx = getTxByTxHash(string);
 					tx = tx.toBuilder().setBlockHeight(blockHeight).build();
-					blockBody.addTransactions(tx);
+					// blockBody.addTransactions(tx);
 					txList.add(tx);
 				}
 			}
@@ -381,7 +378,7 @@ public class BlockHelper implements ActorService {
 				block.setHeader(blockHeader);
 			}
 
-			block.setBody(blockBody);
+			// block.setBody(blockBody);
 		}
 
 		return block.build();
@@ -395,7 +392,8 @@ public class BlockHelper implements ActorService {
 		BlockMiner.Builder miner = BlockMiner.newBuilder();
 		miner.setNode(StringUtils.isNotBlank(oBlockMiner.getNode()) ? oBlockMiner.getNode() : "");
 		miner.setAddress(StringUtils.isNotBlank(oBlockMiner.getAddress()) ? oBlockMiner.getAddress() : "");
-		miner.setReward(String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockMiner.getReward().toByteArray()))));
+		miner.setReward(
+				String.valueOf(UnitUtil.fromWei(ByteUtil.bytesToBigInteger(oBlockMiner.getReward().toByteArray()))));
 		miner.setBcuid(StringUtils.isNotBlank(oBlockMiner.getBcuid()) ? oBlockMiner.getBcuid() : "");
 
 		return miner;

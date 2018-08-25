@@ -107,8 +107,8 @@ public class AddressHelper implements ActorService {
 								ctv.setTimestamp(act.getTimestamp());
 								ctv.setIndex(act.getIndex());
 								ctv.setTotal(act.getTotal());
-								ctv.setCode(act.getCode() == null ? encApi.hexEnc(act.getCode().toByteArray()) : "");
-								ctv.setName(act.getName() == null ? encApi.hexEnc(act.getName().toByteArray()) : "");
+								ctv.setCode(act.getCode() == null ? act.getCode() : "");
+								ctv.setName(act.getName() == null ? act.getName() : "");
 								ctv.setOwner(encApi.hexEnc(act.getOwner().toByteArray()));
 								ctv.setNonce(act.getNonce());
 

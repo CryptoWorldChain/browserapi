@@ -48,8 +48,8 @@ message CryptoToken {
 message CryptoTokenValue {
     string hash = 1; // Token的hash，hash(index,total,code,name,timestamp)
     int64 timestamp = 2; // Token创建时间
-    int32 index = 3; // 该Token发行时的索引
-    int32 total = 4; // 该Token的发行总数量
+    int64 index = 3; // 该Token发行时的索引
+    int64 total = 4; // 该Token的发行总数量
     string code = 5; // Token的编号
     string name = 6; // Token的名称
     string owner = 7; // 所有人的账户地址
