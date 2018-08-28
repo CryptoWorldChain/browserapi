@@ -182,8 +182,8 @@ public class BlockHelper implements ActorService {
 			long bestHeight = getLastBlockNumber();
 
 			int i = pageSize;
-			while (i >= 0) {
-				long number = bestHeight - pageSize + i;
+			while (i > 0) {
+				long number = bestHeight - (pageNo * pageSize) + i;
 				BlockEntity block = blocks.getIfPresent(number);
 				if (block == null) {
 					block = oBlockChainHelper.getBlockByNumber(number);
@@ -341,40 +341,24 @@ public class BlockHelper implements ActorService {
 
 			String aveTx = "0.00";
 
-			// header
 			if (blockHeader != null) {
-				// miner
 				blockHeader.setMiner(oBlockMiner2Miner(blockEntity.getMiner()));
-				// nodes
-				// List<MultiTransaction> txs =
-				// blockEntity.getBody().getTxsList();
-				// if (txs != null && !txs.isEmpty()) {
-				// for (MultiTransaction tx : txs) {
-				// blockHeader.addNodes(tx.getTxNode().getBcuid());// 节点唯一性标识
-				// }
-				// }
-
 				if (txList.size() > 2) {
 					long sumTime = 0L;
 					List<Long> times = new ArrayList<>();
 					for (int i = 0; i < txList.size(); i++) {
 						times.add(txList.get(i).getTimeStamp());
 					}
-
 					Collections.sort(times);
-
 					long temp = times.get(0);
 					for (int i = 1; i < times.size(); i++) {
 						sumTime = times.get(i) - temp;
 						temp = times.get(i);
 					}
-
 					double a = (double) sumTime / txList.size();
 					aveTx = DataUtil.formateStr(a + "");
 				}
-
 				blockHeader.setAvetx(aveTx);
-
 				block.setHeader(blockHeader);
 			}
 
@@ -479,66 +463,52 @@ public class BlockHelper implements ActorService {
 		List<BlockEntity> oBlockEntityList = null;
 		Map<String, Transaction> retMap = new HashMap<>();
 
-		org.brewchain.evmapi.gens.Block.BlockEntity.Builder startBlock = getTheBestBlockEntity();
-		String startHash = null;
-		BlockEntity lastBlock = null;
-		while (startBlock != null) {
-			startHash = startBlock.getHeader().getBlockHash();
-			try {
-				oBlockEntityList = oBlockChainHelper.getParentsBlocks(startHash, null, 200);
-			} catch (Exception e) {
-				log.debug("oBlockChainHelper.getParentsBlocks(startHash,null,200) error");
-			}
+		try {
+			long bestHeight = getLastBlockNumber();
 
-			if (oBlockEntityList != null && !oBlockEntityList.isEmpty()) {
-				int i = 0;
-				for (; i < oBlockEntityList.size(); i++) {
-					List<MultiTransaction> txList = oBlockEntityList.get(i).getBody().getTxsList();
+			long i = 200;
+			long pageSize = 0;
+			if (bestHeight <= 200) {
+				i = bestHeight;
+			}
+			pageSize = i;
+			while (i > 0) {
+				long number = bestHeight - (pageSize) + i;
+				BlockEntity block = blocks.getIfPresent(number);
+				if (block == null) {
+					block = oBlockChainHelper.getBlockByNumber(number);
+					blocks.put(number, block);
+				}
+				if (block != null) {
+					List<MultiTransaction> txList = block.getBody().getTxsList();
 					if (!txList.isEmpty()) {
-						long blockHeight = oBlockEntityList.get(i).getHeader().getNumber();
-						for (MultiTransaction oMultiTransaction : oBlockEntityList.get(i).getBody().getTxsList()) {
+						long blockHeight = block.getHeader().getNumber();
+						for (MultiTransaction oMultiTransaction : block.getBody().getTxsList()) {
 							String txHash = "";
-							Transaction tx = null;
 							boolean added = false;
 							for (MultiTransactionInput oMultiTransactionInput : oMultiTransaction.getTxBody()
 									.getInputsList()) {
 								if (oMultiTransactionInput.getAddress().equals(address)) {
-									txHash = oMultiTransaction.getTxHash();
-									added = true;
+									retMap.put(oMultiTransaction.getTxHash(), OTx2Tx(oMultiTransaction));
 									break;
 								}
 							}
-							if (!added) {
-								for (MultiTransactionOutput oMultiTransactionOutput : oMultiTransaction.getTxBody()
-										.getOutputsList()) {
-									if (oMultiTransactionOutput.getAddress().equals(address)) {
-										txHash = oMultiTransaction.getTxHash();
-										break;
-									}
+							for (MultiTransactionOutput oMultiTransactionOutput : oMultiTransaction.getTxBody()
+									.getOutputsList()) {
+								if (oMultiTransactionOutput.getAddress().equals(address)) {
+									retMap.put(oMultiTransaction.getTxHash(), OTx2Tx(oMultiTransaction));
+									break;
 								}
 							}
-							if (StringUtils.isNotBlank(txHash)) {
-								tx = getTxByTxHash(txHash);
-								if (tx != null) {
-									tx = tx.toBuilder().setBlockHeight(blockHeight).build();
-									retMap.put(txHash, tx);
-								}
-							}
+
 						}
 					}
 				}
-				lastBlock = oBlockEntityList.get(i - 1);
-
-				if (lastBlock.getHeader().getNumber() == 0) {
-					break;
-				}
-
-				startBlock = getBlockEntityByBlockHeight(lastBlock.getHeader().getNumber() - 1).toBuilder();
-			} else {
-				break;
+				i--;
 			}
+		} catch (Exception e) {
+			log.error("get batch blocks error" + e.getMessage());
 		}
-
 		return retMap;
 	}
 
@@ -582,14 +552,14 @@ public class BlockHelper implements ActorService {
 		ByteString data = mtBody.getData();
 
 		// 委托代理
-		List<ByteString> delegates = mtBody.getDelegateList();
-		List<String> delegateStrs = null;
-		if (delegates != null && !delegates.isEmpty()) {
-			delegateStrs = new LinkedList<String>();
-			for (ByteString byteStr : delegates) {
-				delegateStrs.add(encApi.hexEnc(byteStr.toByteArray()));
-			}
-		}
+//		List<ByteString> delegates = mtBody.getDelegateList();
+//		List<String> delegateStrs = null;
+//		if (delegates != null && !delegates.isEmpty()) {
+//			delegateStrs = new LinkedList<String>();
+//			for (ByteString byteStr : delegates) {
+//				delegateStrs.add(encApi.hexEnc(byteStr.toByteArray()));
+//			}
+//		}
 
 		// 输入
 		List<MultiTransactionInput> mtxInput = mtBody.getInputsList();
@@ -627,7 +597,7 @@ public class BlockHelper implements ActorService {
 
 		// 构建对象
 		Transaction tx = getTransactionEntityByParams(mtx.getTxHash(), txStatus, blockHeight, timeStamp, froms, tos,
-				delegateStrs, data);
+				null, data);
 
 		return tx;
 	}

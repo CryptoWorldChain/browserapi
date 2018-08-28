@@ -3,6 +3,7 @@ package org.brewchain.browserAPI.Helper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,44 @@ public class AddressHelper implements ActorService {
 	@ActorRequire(name = "blockHelper", scope = "global")
 	BlockHelper blockHelper;
 
+	public AddressInfo.Builder getAccountTxDetailByAddress(ByteString address) {
+		AddressInfo.Builder account = null;
+
+		Account.Builder oAccount = accountHelper.GetAccount(address);
+		if (oAccount != null) {
+			account = AddressInfo.newBuilder();
+			AccountValue oAccountValue = oAccount.getValue();
+			if (oAccountValue != null) {
+				// transactions
+				Map<String, Transaction> map = blockHelper.getTxByAddress(address);
+
+				Iterator<String> it = map.keySet().iterator();
+				List<Transaction> ts = new ArrayList<>();
+				while (it.hasNext()) {
+					String key = it.next();
+					ts.add(map.get(key));
+				}
+//				Collections.sort(ts, new Comparator<Transaction>() {
+//
+//					@Override
+//					public int compare(Transaction o1, Transaction o2) {
+//						if (o1.getTimeStamp() < o2.getTimeStamp()) {
+//							return 1;
+//						} else if (o1.getTimeStamp() > o2.getTimeStamp()) {
+//							return -1;
+//						}
+//						return 0;
+//					}
+//				});
+				for (Transaction t : ts) {
+					account.addTransactions(t);
+				}
+			}
+		}
+
+		return account;
+	}
+
 	/**
 	 * @param address
 	 * @return
@@ -62,7 +101,7 @@ public class AddressHelper implements ActorService {
 	public AddressInfo.Builder getAccountDetailByAddress(ByteString address) {
 		AddressInfo.Builder account = null;
 
-		Account oAccount = accountHelper.GetAccount(address);
+		Account.Builder oAccount = accountHelper.GetAccount(address);
 		if (oAccount != null) {
 			account = AddressInfo.newBuilder();
 			AccountValue oAccountValue = oAccount.getValue();
@@ -120,7 +159,8 @@ public class AddressHelper implements ActorService {
 				}
 
 				// transactions
-				Map<String, Transaction> map = blockHelper.getTxByAddress(address);
+				Map<String, Transaction> map = new HashMap<>();
+				// blockHelper.getTxByAddress(address);
 
 				Iterator<String> it = map.keySet().iterator();
 				List<Transaction> ts = new ArrayList<>();
